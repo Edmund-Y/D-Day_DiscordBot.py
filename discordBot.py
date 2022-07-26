@@ -17,7 +17,7 @@ class aclient(discord.Client):
     async def on_ready(self):
         await self.wait_until_ready()
         if not self.synced:  # check if slash commands have been synced
-            await tree.sync(guild=discord.Object(id=secrets.get('testGuild')))
+            await tree.sync(guild=discord.Object(id=secrets.get('discordsv')))
             self.synced = True
         if not self.added:
             self.add_view(button_view())
@@ -40,7 +40,7 @@ async def auto():
         embed_one.add_field(name='참여라면', value=':o: 이모지를 클릭', inline=False)
         embed_one.add_field(name='불참여라면', value=':x: 이모지를 클릭', inline=False)
         embed_one.set_footer(text='@everyone')
-        contechAlert = await client.get_channel(secrets.get('testChatOne')).send(embed=embed_one)
+        contechAlert = await client.get_channel(secrets.get('contect_alert')).send(embed=embed_one)
 
         embed = discord.Embed(title=day5.strftime('%y년 %m월 %d일(토)'), description='컨텐츠시간은  21시 30분  입니다.',color=0x74BBFF)
         embed.set_author(name='정기컨텐츠 안내',icon_url='https://cdn.discordapp.com/icons/875723042200911892/c3976639ca840916db9565567b8fb9d2.webp?size=256')
@@ -48,7 +48,7 @@ async def auto():
         embed.add_field(name='참여려면', value=':o: 이모지를 클릭', inline=False)
         embed.add_field(name='불참여라면', value=':x: 이모지를 클릭', inline=False)
         embed.set_footer(text='불참시 아래에 반드시 사유를 작성해주세요.')
-        contechChk = await client.get_channel(secrets.get('testChatTwo')).send(embed=embed)
+        contechChk = await client.get_channel(secrets.get('contect_chk')).send(embed=embed)
         await contechChk.add_reaction('⭕')
         await contechChk.add_reaction('❌')
 
@@ -67,7 +67,7 @@ class button_view(discord.ui.View):
 client = aclient()
 tree = app_commands.CommandTree(client)
 
-@tree.command(guild=discord.Object(id=secrets.get('testGuild')), name='서버구동', description='마인크래프트 서버를 구동합니다.')
+@tree.command(guild=discord.Object(id=secrets.get('discordsv')), name='서버구동', description='마인크래프트 서버를 구동합니다.')
 @app_commands.checks.cooldown(1, 30, key=lambda i: (i.guild_id))
 async def serverstart(interaction: discord.Interaction):
     await interaction.response.send_message(view=button_view())
@@ -76,7 +76,7 @@ async def on_tester_error(interaction: discord.Interaction, error: app_commands.
     if isinstance(error, app_commands.CommandOnCooldown):
         await interaction.response.send_message(f"{int(error.retry_after)}초 후 명령어를 사용할 수 있습니다.", ephemeral=True)
 
-@tree.command(guild=discord.Object(id=secrets.get('testGuild')), name='콘텐츠서버종료', description='실행중인 콘텐츠 서버를 종료합니다.')
+@tree.command(guild=discord.Object(id=secrets.get('discordsv')), name='콘텐츠서버종료', description='실행중인 콘텐츠 서버를 종료합니다.')
 @app_commands.checks.cooldown(1, 30, key=lambda i: (i.guild_id))
 async def serverstop(interaction: discord.Interaction,):
     await interaction.response.send_message(f"콘텐츠서버에 서버종료 요청하였습니다.", ephemeral=True)
