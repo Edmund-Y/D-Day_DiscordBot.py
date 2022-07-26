@@ -1,3 +1,4 @@
+#pip install -U git+https://github.com/Rapptz/discord.py
 import os, json
 import discord
 from discord import app_commands
@@ -87,5 +88,14 @@ async def serverstop(interaction: discord.Interaction,):
 async def on_tester_error(interaction: discord.Interaction, error: app_commands.AppCommandError):
     if isinstance(error, app_commands.CommandOnCooldown):
         await interaction.response.send_message(f"{int(error.retry_after)}초 후 명령어를 사용할 수 있습니다.", ephemeral=True)
-
+        
+@tree.command(guild=discord.Object(id=secrets.get('discordsv')), name='출석체크', description='정기컨텐츠 참여 확인합니다.')
+async def chkplayer(interaction: discord.Interaction):
+    msid = await client.get_channel(secrets.get('contect_chk')).fetch_message(client.get_channel(secrets.get('contect_chk')).last_message_id)
+    #msid.id = 참여확인 마지막 메시지 아이디
+    if [playerchk for playerchk in interaction.user.roles if secrets.get('admin') == str(playerchk.id)]:
+        await interaction.response.send_message(f"결과가 잠시후 출력됩니다.", ephemeral=True)
+    else:
+        await interaction.response.send_message(f"관리자만 가능한 명령어입니다.", ephemeral=True)
+        
 client.run(secrets.get('discord_token'))
