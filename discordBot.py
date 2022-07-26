@@ -69,15 +69,17 @@ client = aclient()
 tree = app_commands.CommandTree(client)
 
 @tree.command(guild=discord.Object(id=secrets.get('discordsv')), name='서버구동', description='마인크래프트 서버를 구동합니다.')
+@app_commands.guilds(secrets.get('discordsv'))
 @app_commands.checks.cooldown(1, 30, key=lambda i: (i.guild_id))
 async def serverstart(interaction: discord.Interaction):
     await interaction.response.send_message(view=button_view())
 @serverstart.error
-async def on_tester_error(interaction: discord.Interaction, error: app_commands.AppCommandError):
+async def on_serverstart_error(interaction: discord.Interaction, error: app_commands.AppCommandError):
     if isinstance(error, app_commands.CommandOnCooldown):
         await interaction.response.send_message(f"{int(error.retry_after)}초 후 명령어를 사용할 수 있습니다.", ephemeral=True)
 
 @tree.command(guild=discord.Object(id=secrets.get('discordsv')), name='콘텐츠서버종료', description='실행중인 콘텐츠 서버를 종료합니다.')
+@app_commands.guilds(secrets.get('discordsv'))
 @app_commands.checks.cooldown(1, 30, key=lambda i: (i.guild_id))
 async def serverstop(interaction: discord.Interaction,):
     await interaction.response.send_message(f"콘텐츠서버에 서버종료 요청하였습니다.", ephemeral=True)
@@ -85,17 +87,15 @@ async def serverstop(interaction: discord.Interaction,):
     embed.set_author(name=str(interaction.user.name) + '님에 의해')
     await client.get_channel(interaction.channel_id).send(embed=embed)
 @serverstop.error
-async def on_tester_error(interaction: discord.Interaction, error: app_commands.AppCommandError):
+async def on_serverstop_error(interaction: discord.Interaction, error: app_commands.AppCommandError):
     if isinstance(error, app_commands.CommandOnCooldown):
         await interaction.response.send_message(f"{int(error.retry_after)}초 후 명령어를 사용할 수 있습니다.", ephemeral=True)
         
 @tree.command(guild=discord.Object(id=secrets.get('discordsv')), name='출석체크', description='정기컨텐츠 참여 확인합니다.')
+@app_commands.guilds(secrets.get('discordsv'))
+@app_commands.checks.has_permissions(manage_messages=True)
 async def chkplayer(interaction: discord.Interaction):
-    msid = await client.get_channel(secrets.get('contect_chk')).fetch_message(client.get_channel(secrets.get('contect_chk')).last_message_id)
-    #msid.id = 참여확인 마지막 메시지 아이디
-    if [playerchk for playerchk in interaction.user.roles if secrets.get('admin') == str(playerchk.id)]:
-        await interaction.response.send_message(f"결과가 잠시후 출력됩니다.", ephemeral=True)
-    else:
-        await interaction.response.send_message(f"관리자만 가능한 명령어입니다.", ephemeral=True)
-        
+    # msid = await client.get_channel(secrets.get('contect_chk')).fetch_message(client.get_channel(secrets.get('contect_chk')).last_message_id)
+    await interaction.response.send_message(f"결과가 잠시후 출력됩니다.", ephemeral=True)
+
 client.run(secrets.get('discord_token'))
