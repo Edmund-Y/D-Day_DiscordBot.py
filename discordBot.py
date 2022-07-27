@@ -7,21 +7,6 @@ from discord.ext import tasks
 
 with open(os.path.join(os.path.dirname(__file__), 'apikey.json')) as f:
     secrets = json.loads(f.read())
-
-try:
-    conn = mariadb.connect(
-        user=secrets.get('sql_usr'),
-        password=secrets.get('sql_pw'),
-        host=secrets.get('sql_addr'),
-        port=secrets.get('sql_port'),
-        database=secrets.get('sql_usr')
-    )
-except mariadb.Error as e:
-    print(f'Error connecting to MariaDB Platform: {e}')
-    sys.exit(1)
-
-cur = conn.cursor()
-
 class aclient(discord.Client):
     def __init__(self):
         super().__init__(intents=discord.Intents.default())
@@ -115,11 +100,25 @@ async def chkplayer(interaction: discord.Interaction):
     
 @tree.command(guild=discord.Object(id=secrets.get('discordsv')), name='플레이시간', description='현실경제서버 누적 접속시간을 조회합니다.')
 async def playtime(interaction: discord.Interaction, 닉네임: str):
-    cur.execute(f"SELECT time FROM realEconomy_playtime WHERE name = '{닉네임}'")
-    rsu = cur.fetchone()
-    if rsu is None:
-        await interaction.response.send_message(f'{닉네임}은 없는 닉네임입니다.')
-    else:
-        await interaction.response.send_message(f'{닉네임}은 {rsu[0]}초 플레이하였습니다.')
+    try:
+        conn = mariadb.connect(
+            user=secrets.get('sql_usr'),
+            password=secrets.get('sql_pw'),
+            host=secrets.get('sql_addr'),
+            port=secrets.get('sql_port'),
+            database=secrets.get('sql_usr')
+        )
+        cur = conn.cursor()
+        cur.execute(f"SELECT time FROM realEconomy_playtime WHERE name = '{닉네임}'")
+        rsu = cur.fetchone()
+        if rsu is None:
+            await interaction.response.send_message(f'{닉네임}은 없는 닉네임입니다.')
+        else:
+            await interaction.response.send_message(
+                f'{닉네임}은 {datetime.timedelta(milliseconds=int(rsu[0]))} 만큼 플레이하였습니다.')
+        conn.close()
+    except mariadb.Error as e:
+        print(f'Error connecting to MariaDB Platform: {e}')
+        sys.exit(1)
 
 client.run(secrets.get('discord_token'))
