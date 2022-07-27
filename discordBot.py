@@ -1,5 +1,5 @@
 #pip install -U git+https://github.com/Rapptz/discord.py
-import os, json, sys, mariadb, discord
+import os, json, sys, mariadb, discord, socket
 from typing import List
 from discord import app_commands
 import datetime
@@ -19,7 +19,6 @@ class aclient(discord.Client):
             await tree.sync(guild=discord.Object(id=secrets.get('discordsv')))
             self.synced = True
         if not self.added:
-            self.add_view(button_view())
             self.added = True
         print(f"We have logged in as {self.user}.")
         auto.start()
@@ -55,20 +54,31 @@ async def auto():
 async def before_auto():
     await client.wait_until_ready()
 
-class button_view(discord.ui.View):
-    def __init__(self) -> None:
-        super().__init__(timeout=None)
-
-    @discord.ui.button(label='채석장', style=discord.ButtonStyle.gray, custom_id='role_button')
-    async def quarry(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.send_message(f'공개예정 기능입니다.', ephemeral=True)
-
 client = aclient()
 tree = app_commands.CommandTree(client)
+
 
 @tree.command(guild=discord.Object(id=secrets.get('discordsv')), name='서버구동', description='마인크래프트 서버를 구동합니다.')
 async def serverstart(interaction: discord.Interaction, 서버이름: str):
     await interaction.response.send_message(f'{서버이름}를 실행합니다.')
+    HOST = '1.226.55.82'
+    PORT = 15874
+    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    client_socket.connect((HOST, PORT))
+    while True:
+
+        message = 'test'
+        if message == 'quit':
+            break
+
+        client_socket.send(message.encode())
+        data = client_socket.recv(1024)
+
+        print('Received from the server :', repr(data.decode()))
+
+    client_socket.close()
+
+
 @serverstart.autocomplete('서버이름')
 async def serverstart_autocomplete(
     interaction: discord.Interaction,
@@ -91,13 +101,13 @@ async def serverstop(interaction: discord.Interaction,):
 async def on_serverstop_error(interaction: discord.Interaction, error: app_commands.AppCommandError):
     if isinstance(error, app_commands.CommandOnCooldown):
         await interaction.response.send_message(f"{int(error.retry_after)}초 후 명령어를 사용할 수 있습니다.", ephemeral=True)
-        
+
 @tree.command(guild=discord.Object(id=secrets.get('discordsv')), name='출석체크', description='정기컨텐츠 참여 확인합니다.')
 @app_commands.checks.has_permissions(manage_messages=True)
 async def chkplayer(interaction: discord.Interaction):
     # msid = await client.get_channel(secrets.get('contect_chk')).fetch_message(client.get_channel(secrets.get('contect_chk')).last_message_id)
     await interaction.response.send_message(f"결과가 잠시후 출력됩니다.", ephemeral=True)
-    
+
 @tree.command(guild=discord.Object(id=secrets.get('discordsv')), name='플레이시간', description='현실경제서버 누적 접속시간을 조회합니다.')
 async def playtime(interaction: discord.Interaction, 닉네임: str):
     try:
