@@ -1,12 +1,16 @@
 #pip install -U git+https://github.com/Rapptz/discord.py
-import os, json, sys, mariadb, discord, socket
+import os, json, sys, mariadb, discord, socket, datetime
 from typing import List
 from discord import app_commands
-import datetime
 from discord.ext import tasks
+
+
 
 with open(os.path.join(os.path.dirname(__file__), 'apikey.json')) as f:
     secrets = json.loads(f.read())
+
+
+
 class aclient(discord.Client):
     def __init__(self):
         super().__init__(intents=discord.Intents.default())
@@ -22,6 +26,10 @@ class aclient(discord.Client):
             self.added = True
         print(f"We have logged in as {self.user}.")
         auto.start()
+client = aclient()
+tree = app_commands.CommandTree(client)
+
+
 
 @tasks.loop(minutes=1)
 async def auto():
@@ -31,12 +39,10 @@ async def auto():
         day5 = now + datetime.datetime.timedelta(days=5)
         embed_one = discord.Embed(
             title=day5.strftime('%y년 %m월 %d일(토)'),
-            description='오후 9:30시에 콘텐츠 진행합니다.\n참여 가능 하신 분들은 <#893485899961237595>에 좋아요 한번씩 눌러주세요~\n참여 불가능 하신분들은 싫어요 누르신 다음 사유 적어주세요.\n\n(사유 없이 미참석시 패널티 부여됩니다!)',
+            description='오후 9:30시에 콘텐츠 진행합니다.\n참여 가능 하신 분들은 <#893485899961237595>에 이모지(반응) 한번씩 눌러주세요~\n참여 불가능 하신분들은 싫어요 누르신 다음 사유 적어주세요.\n\n(사유 없이 미참석시 패널티 부여됩니다!)',
             color=0x74BBFF
         )
         embed_one.set_author(name='정기컨텐츠 안내',icon_url='https://cdn.discordapp.com/icons/875723042200911892/c3976639ca840916db9565567b8fb9d2.webp?size=256')
-        embed_one.add_field(name='참여라면', value=':o: 이모지를 클릭', inline=False)
-        embed_one.add_field(name='불참여라면', value=':x: 이모지를 클릭', inline=False)
         embed_one.set_footer(text='@everyone')
         contechAlert = await client.get_channel(secrets.get('contect_alert')).send(embed=embed_one)
 
@@ -49,36 +55,13 @@ async def auto():
         contechChk = await client.get_channel(secrets.get('contect_chk')).send(embed=embed)
         await contechChk.add_reaction('⭕')
         await contechChk.add_reaction('❌')
-
 @auto.before_loop
 async def before_auto():
     await client.wait_until_ready()
 
-client = aclient()
-tree = app_commands.CommandTree(client)
-
-
 @tree.command(guild=discord.Object(id=secrets.get('discordsv')), name='서버구동', description='마인크래프트 서버를 구동합니다.')
 async def serverstart(interaction: discord.Interaction, 서버이름: str):
     await interaction.response.send_message(f'{서버이름}를 실행합니다.')
-    HOST = '1.226.55.82'
-    PORT = 15874
-    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    client_socket.connect((HOST, PORT))
-    while True:
-
-        message = 'test'
-        if message == 'quit':
-            break
-
-        client_socket.send(message.encode())
-        data = client_socket.recv(1024)
-
-        print('Received from the server :', repr(data.decode()))
-
-    client_socket.close()
-
-
 @serverstart.autocomplete('서버이름')
 async def serverstart_autocomplete(
     interaction: discord.Interaction,
@@ -89,6 +72,8 @@ async def serverstart_autocomplete(
         app_commands.Choice(name=selserver, value=selserver)
         for selserver in serverstart if current.lower() in selserver.lower()
     ]
+
+
 
 @tree.command(guild=discord.Object(id=secrets.get('discordsv')), name='콘텐츠서버종료', description='실행중인 콘텐츠 서버를 종료합니다.')
 @app_commands.checks.cooldown(1, 30, key=lambda i: (i.guild_id))
@@ -102,11 +87,15 @@ async def on_serverstop_error(interaction: discord.Interaction, error: app_comma
     if isinstance(error, app_commands.CommandOnCooldown):
         await interaction.response.send_message(f"{int(error.retry_after)}초 후 명령어를 사용할 수 있습니다.", ephemeral=True)
 
+
+
 @tree.command(guild=discord.Object(id=secrets.get('discordsv')), name='출석체크', description='정기컨텐츠 참여 확인합니다.')
 @app_commands.checks.has_permissions(manage_messages=True)
 async def chkplayer(interaction: discord.Interaction):
     # msid = await client.get_channel(secrets.get('contect_chk')).fetch_message(client.get_channel(secrets.get('contect_chk')).last_message_id)
     await interaction.response.send_message(f"결과가 잠시후 출력됩니다.", ephemeral=True)
+
+
 
 @tree.command(guild=discord.Object(id=secrets.get('discordsv')), name='플레이시간', description='현실경제서버 누적 접속시간을 조회합니다.')
 async def playtime(interaction: discord.Interaction, 닉네임: str):
@@ -124,11 +113,23 @@ async def playtime(interaction: discord.Interaction, 닉네임: str):
         if rsu is None:
             await interaction.response.send_message(f'{닉네임}은 없는 닉네임입니다.')
         else:
-            await interaction.response.send_message(
-                f'{닉네임}은 {datetime.timedelta(milliseconds=int(rsu[0]))} 만큼 플레이하였습니다.')
+            await interaction.response.send_message(f'{닉네임}은 {datetime.timedelta(milliseconds=int(rsu[0]))} 만큼 플레이하였습니다.')
         conn.close()
     except mariadb.Error as e:
         print(f'Error connecting to MariaDB Platform: {e}')
         sys.exit(1)
+
+
+
+@tree.command(guild=discord.Object(id=secrets.get('discordsv')), name='현경실시간지도', description='현경서버의 실시간 지도를 표출합니다.')
+@app_commands.checks.cooldown(1, 30, key=lambda i: (i.guild_id))
+async def realEconomyLivemap(interaction: discord.Interaction,):
+    await interaction.response.send_message(f"http://map.d-day.moonlight.one/", ephemeral=True)
+@realEconomyLivemap.error
+async def on_realEconomyLivemap_error(interaction: discord.Interaction, error: app_commands.AppCommandError):
+    if isinstance(error, app_commands.CommandOnCooldown):
+        await interaction.response.send_message(f"{int(error.retry_after)}초 후 명령어를 사용할 수 있습니다.", ephemeral=True)
+
+
 
 client.run(secrets.get('discord_token'))
