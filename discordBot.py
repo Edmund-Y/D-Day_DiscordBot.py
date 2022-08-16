@@ -102,7 +102,13 @@ async def on_serverstop_error(interaction: discord.Interaction, error: app_comma
 async def chkplayer(interaction: discord.Interaction):
     # msid = await client.get_channel(secrets.get('contect_chk')).fetch_message(client.get_channel(secrets.get('contect_chk')).last_message_id)
     await interaction.response.send_message(f"결과가 잠시후 출력됩니다.", ephemeral=True)
-
+    channel = client.get_channel(secrets.get('contect_chk'))
+    yesterday = datetime.datetime.utcnow() - datetime.timedelta(days=8)
+    today = datetime.datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    async for message in channel.history(limit=None, before=today, after=yesterday):
+        if str(message.author) == 'D-DAY#1973':
+            print(message.id)
+    print(client.get_all_members())
 
 
 @tree.command(guild=discord.Object(id=secrets.get('discordsv')), name='플레이시간', description='현실경제서버 누적 접속시간을 조회합니다.')
