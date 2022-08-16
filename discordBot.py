@@ -150,26 +150,25 @@ async def chkplayer(interaction: discord.Interaction):
 
 
 @tree.command(guild=discord.Object(id=secrets.get('discordsv')), name='랜덤팀', description='현재 통화중인 사람을 랜덤으로 팀을 배분합니다.')
-async def randomTeamSet(interaction: discord.Interaction, 팀수: int):
-    if 팀수 <= 1:
-        await interaction.response.send_message('팀 수는 2 이상 부터 가능합니다.', ephemeral=True)
-    else:
-        try:
-            randomlist = [i.name for i in client.get_channel(interaction.user.voice.channel.id).members]
-            embed = discord.Embed(title='랜덤으로 팀을 뽑았습니다.')
-            embed.set_footer(text='moonlight ONE System')
-            for a in range(len(randomlist) // 팀수):
-                temps = []  # temps 비우기
-                while len(temps) < 팀수:
-                    temp = random.choice(randomlist)
-                    if temp not in temps:  # 랜덤추출값 중복 방지
-                        temps.append(temp)  # 값 tmeps에 추가
-                        randomlist.remove(temp)  # person에서는 추출된 값 삭제
-                print(f'{a + 1}조:{temps}')  # 1조부터 시작
-                embed.add_field(name=f'{a + 1}팀', value=f'{temps}', inline=False)
-            await interaction.response.send_message(embed=embed)
-        except AttributeError:
-            await interaction.response.send_message('현재 접속중인 통화방이 없습니다.', ephemeral=True)
+async def randomTeamSet(interaction: discord.Interaction, 팀원수: int):
+    try:
+        randomlist = [i.name for i in client.get_channel(interaction.user.voice.channel.id).members]
+        embed = discord.Embed(title='랜덤으로 팀을 뽑았습니다.')
+        embed.set_footer(text='moonlight ONE System')
+        b = 1
+        list = ''
+        while randomlist:
+            for a in range(1, 1+int(팀원수)):
+                if randomlist:
+                    tem = random.choice(randomlist)
+                    list += str(tem)+'\n'
+                    randomlist.remove(tem)
+            embed.add_field(name=f'{b}팀', value=f'{list}', inline=False)
+            b += 1
+            list = ''
+        await interaction.response.send_message(embed=embed)
+    except AttributeError:
+        await interaction.response.send_message('현재 접속중인 통화방이 없습니다.', ephemeral=True)
 
 
 
