@@ -104,18 +104,31 @@ async def on_serverstop_error(interaction: discord.Interaction, error: app_comma
 @tree.command(guild=discord.Object(id=secrets.get('discordsv')), name='출석체크', description='정기컨텐츠 참여 확인합니다.')
 @app_commands.checks.has_permissions(manage_messages=True)
 async def chkplayer(interaction: discord.Interaction):
-    # msid = await client.get_channel(secrets.get('contect_chk')).fetch_message(client.get_channel(secrets.get('contect_chk')).last_message_id)
-    await interaction.response.send_message(f"결과가 잠시후 출력됩니다.", ephemeral=True)
     channel = client.get_channel(secrets.get('contect_chk'))
     yesterday = datetime.datetime.utcnow() - datetime.timedelta(days=8)
     today = datetime.datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    embed = discord.Embed(title='정기컨텐츠 출석부')
+    embed.set_footer(text='moonlight ONE System')
+    allplayers = [member.name for member in client.get_all_members() if not member.bot]
+    print(allplayers)
+    noplayer = ''
+    if client.get_channel(secrets.get('voice_ch_all')).members:
+        for i in client.get_channel(secrets.get('voice_ch_all')).members:
+            noplayer += str(i.name) + '\n'
+            # allplayers.remove(i.name)
+        embed.add_field(name='참여', value=f'{noplayer}', inline=True)
+    noplayer = ''
     async for message in channel.history(limit=None, before=today, after=yesterday):
         if str(message.author) == 'D-DAY#1973':
-            print(message.id)
             for reaction in message.reactions:
-                print(reaction)
-
-
+                if str(reaction) == '❌':
+                    async for user in reaction.users():
+                        if not user.bot:
+                            noplayer += str(user.name)+'\n'
+                            # allplayers.remove(user.name)
+                    embed.add_field(name='불참여(작성)', value=f'{noplayer}', inline=True)
+    embed.add_field(name='불참여(미작성)', value=f'추가중', inline=True)
+    await interaction.response.send_message(embed=embed)
 
 # @tree.command(guild=discord.Object(id=secrets.get('discordsv')), name='플레이시간', description='현실경제서버 누적 접속시간을 조회합니다.')
 # async def playtime(interaction: discord.Interaction, 닉네임: str):
@@ -155,7 +168,7 @@ async def chkplayer(interaction: discord.Interaction):
 @tree.command(guild=discord.Object(id=secrets.get('discordsv')), name='랜덤팀', description='현재 통화중인 사람을 랜덤으로 팀을 배분합니다.')
 async def randomTeamSet(interaction: discord.Interaction, 팀원수: int):
     try:
-        randomlist = [i.name for i in client.get_channel(interaction.user.voice.channel.id).members]
+        randomlist = [i.name for i in client.get_channel(interaction.user.voice.channel.id).members if not i.bot]
         embed = discord.Embed(title='랜덤으로 팀을 뽑았습니다.')
         embed.set_footer(text='moonlight ONE System')
         b = 1
