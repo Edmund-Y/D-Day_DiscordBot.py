@@ -1,5 +1,6 @@
 #pip install -U git+https://github.com/Rapptz/discord.py
 import os, json, sys, mariadb, discord, socket, datetime
+import random
 from typing import List
 from discord import app_commands
 from discord.ext import tasks
@@ -43,15 +44,15 @@ async def auto():
             color=0x74BBFF
         )
         embed_one.set_author(name='정기컨텐츠 안내',icon_url='https://cdn.discordapp.com/icons/875723042200911892/c3976639ca840916db9565567b8fb9d2.webp?size=256')
-        embed_one.set_footer(text='@everyone')
+        embed_one.set_footer(text='moonlight ONE System')
         contechAlert = await client.get_channel(secrets.get('contect_alert')).send(embed=embed_one)
-
         embed = discord.Embed(title=day5.strftime('%y년 %m월 %d일(토)'), description='컨텐츠시간은  21시 30분  입니다.',color=0x74BBFF)
         embed.set_author(name='정기컨텐츠 안내',icon_url='https://cdn.discordapp.com/icons/875723042200911892/c3976639ca840916db9565567b8fb9d2.webp?size=256')
         embed.set_thumbnail(url='https://cdn.discordapp.com/icons/875723042200911892/c3976639ca840916db9565567b8fb9d2.webp?size=256')
         embed.add_field(name='참여려면', value=':o: 이모지를 클릭', inline=False)
         embed.add_field(name='불참여라면', value=':x: 이모지를 클릭', inline=False)
-        embed.set_footer(text='불참시 아래에 반드시 사유를 작성해주세요.')
+        embed.add_field(name='[!]', value='불참여시 사유를 아래 작성해주세요.', inline=True)
+        embed.set_footer(text='moonlight ONE System')
         contechChk = await client.get_channel(secrets.get('contect_chk')).send(embed=embed)
         await contechChk.add_reaction('⭕')
         await contechChk.add_reaction('❌')
@@ -67,7 +68,10 @@ def socketgo(stats, svname):
 
 @tree.command(guild=discord.Object(id=secrets.get('discordsv')), name='서버구동', description='마인크래프트 서버를 구동합니다.')
 async def serverstart(interaction: discord.Interaction, 서버이름: str):
-    await interaction.response.send_message(f'{서버이름}를 실행합니다.')
+    embed = discord.Embed(title=f'{서버이름}를 실행합니다.')
+    embed.set_author(name=str(interaction.user.name) + '님에 의해')
+    embed.set_footer(text='moonlight ONE System')
+    await interaction.response.send_message(embed=embed)
     socketgo('start/', str(서버이름))
 @serverstart.autocomplete('서버이름')
 async def serverstart_autocomplete(
@@ -85,10 +89,10 @@ async def serverstart_autocomplete(
 @tree.command(guild=discord.Object(id=secrets.get('discordsv')), name='콘텐츠서버종료', description='실행중인 콘텐츠 서버를 종료합니다.')
 @app_commands.checks.cooldown(1, 30, key=lambda i: (i.guild_id))
 async def serverstop(interaction: discord.Interaction,):
-    await interaction.response.send_message(f'콘텐츠서버에 서버종료 요청하였습니다.', ephemeral=True)
     embed = discord.Embed(title='모든 콘텐츠 서버가 종료되었습니다.')
     embed.set_author(name=str(interaction.user.name) + '님에 의해')
-    await client.get_channel(interaction.channel_id).send(embed=embed)
+    embed.set_footer(text='moonlight ONE System')
+    await interaction.response.send_message(embed=embed)
     socketgo('stop/', 'all')
 @serverstop.error
 async def on_serverstop_error(interaction: discord.Interaction, error: app_commands.AppCommandError):
@@ -108,51 +112,64 @@ async def chkplayer(interaction: discord.Interaction):
     async for message in channel.history(limit=None, before=today, after=yesterday):
         if str(message.author) == 'D-DAY#1973':
             print(message.id)
-    print(client.get_all_members())
 
 
-@tree.command(guild=discord.Object(id=secrets.get('discordsv')), name='플레이시간', description='현실경제서버 누적 접속시간을 조회합니다.')
-async def playtime(interaction: discord.Interaction, 닉네임: str):
-    try:
-        conn = mariadb.connect(
-            user=secrets.get('sql_usr'),
-            password=secrets.get('sql_pw'),
-            host=secrets.get('sql_addr'),
-            port=secrets.get('sql_port'),
-            database=secrets.get('sql_usr')
-        )
-        cur = conn.cursor()
-        cur.execute(f"SELECT time FROM realEconomy_playtime WHERE name = '{닉네임}'")
-        rsu = cur.fetchone()
-        if rsu is None:
-            await interaction.response.send_message(f'{닉네임}은 없는 닉네임입니다.')
-        else:
-            await interaction.response.send_message(f'{닉네임}은 {datetime.timedelta(milliseconds=int(rsu[0]))} 만큼 플레이하였습니다.')
-        conn.close()
-    except mariadb.Error as e:
-        print(f'Error connecting to MariaDB Platform: {e}')
-        sys.exit(1)
-
-
-
-@tree.command(guild=discord.Object(id=secrets.get('discordsv')), name='현경실시간지도', description='현경서버의 실시간 지도를 표출합니다.')
-@app_commands.checks.cooldown(1, 30, key=lambda i: (i.guild_id))
-async def realEconomyLivemap(interaction: discord.Interaction,):
-    await interaction.response.send_message(f"http://map.d-day.moonlight.one/", ephemeral=True)
-@realEconomyLivemap.error
-async def on_realEconomyLivemap_error(interaction: discord.Interaction, error: app_commands.AppCommandError):
-    if isinstance(error, app_commands.CommandOnCooldown):
-        await interaction.response.send_message(f"{int(error.retry_after)}초 후 명령어를 사용할 수 있습니다.", ephemeral=True)
+# @tree.command(guild=discord.Object(id=secrets.get('discordsv')), name='플레이시간', description='현실경제서버 누적 접속시간을 조회합니다.')
+# async def playtime(interaction: discord.Interaction, 닉네임: str):
+#     try:
+#         conn = mariadb.connect(
+#             user=secrets.get('sql_usr'),
+#             password=secrets.get('sql_pw'),
+#             host=secrets.get('sql_addr'),
+#             port=secrets.get('sql_port'),
+#             database=secrets.get('sql_usr')
+#         )
+#         cur = conn.cursor()
+#         cur.execute(f"SELECT time FROM realEconomy_playtime WHERE name = '{닉네임}'")
+#         rsu = cur.fetchone()
+#         if rsu is None:
+#             await interaction.response.send_message(f'{닉네임}은 없는 닉네임입니다.')
+#         else:
+#             await interaction.response.send_message(f'{닉네임}은 {datetime.timedelta(milliseconds=int(rsu[0]))} 만큼 플레이하였습니다.')
+#         conn.close()
+#     except mariadb.Error as e:
+#         print(f'Error connecting to MariaDB Platform: {e}')
+#         sys.exit(1)
 
 
 
-@tree.command(guild=discord.Object(id=secrets.get('discordsv')), name='randomteam', description='We randomly assign people in the current call room.')
-async def randomTeamSet(interaction: discord.Interaction, count: int):
-    if count <= 1:
-        await interaction.response.send_message(f"The number of teams is 2 or more.", ephemeral=True)
+# @tree.command(guild=discord.Object(id=secrets.get('discordsv')), name='현경실시간지도', description='현경서버의 실시간 지도를 표출합니다.')
+# @app_commands.checks.cooldown(1, 30, key=lambda i: (i.guild_id))
+# async def realEconomyLivemap(interaction: discord.Interaction,):
+#     await interaction.response.send_message(f"http://map.d-day.moonlight.one/", ephemeral=True)
+# @realEconomyLivemap.error
+# async def on_realEconomyLivemap_error(interaction: discord.Interaction, error: app_commands.AppCommandError):
+#     if isinstance(error, app_commands.CommandOnCooldown):
+#         await interaction.response.send_message(f"{int(error.retry_after)}초 후 명령어를 사용할 수 있습니다.", ephemeral=True)
+
+
+
+@tree.command(guild=discord.Object(id=secrets.get('discordsv')), name='랜덤팀', description='현재 통화중인 사람을 랜덤으로 팀을 배분합니다.')
+async def randomTeamSet(interaction: discord.Interaction, 팀수: int):
+    if 팀수 <= 1:
+        await interaction.response.send_message('팀 수는 2 이상 부터 가능합니다.', ephemeral=True)
     else:
-        #Command user's voice channel
-        print("player voice channel is ")
+        try:
+            randomlist = [i.name for i in client.get_channel(interaction.user.voice.channel.id).members]
+            embed = discord.Embed(title='랜덤으로 팀을 뽑았습니다.')
+            embed.set_footer(text='moonlight ONE System')
+            for a in range(len(randomlist) // 팀수):
+                temps = []  # temps 비우기
+                while len(temps) < 팀수:
+                    temp = random.choice(randomlist)
+                    if temp not in temps:  # 랜덤추출값 중복 방지
+                        temps.append(temp)  # 값 tmeps에 추가
+                        randomlist.remove(temp)  # person에서는 추출된 값 삭제
+                print(f'{a + 1}조:{temps}')  # 1조부터 시작
+                embed.add_field(name=f'{a + 1}팀', value=f'{temps}', inline=False)
+            await interaction.response.send_message(embed=embed)
+        except AttributeError:
+            await interaction.response.send_message('현재 접속중인 통화방이 없습니다.', ephemeral=True)
 
 
 
