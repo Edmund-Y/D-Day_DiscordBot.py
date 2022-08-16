@@ -44,7 +44,7 @@ async def auto():
             color=0x74BBFF
         )
         embed_one.set_author(name='정기컨텐츠 안내',icon_url='https://cdn.discordapp.com/icons/875723042200911892/c3976639ca840916db9565567b8fb9d2.webp?size=256')
-        embed_one.set_footer(text='moonlight ONE System')
+        embed_one.set_footer(text='moonlight ONE system')
         contechAlert = await client.get_channel(secrets.get('contect_alert')).send(embed=embed_one)
         embed = discord.Embed(title=day5.strftime('%y년 %m월 %d일(토)'), description='컨텐츠시간은  21시 30분  입니다.',color=0x74BBFF)
         embed.set_author(name='정기컨텐츠 안내',icon_url='https://cdn.discordapp.com/icons/875723042200911892/c3976639ca840916db9565567b8fb9d2.webp?size=256')
@@ -52,7 +52,7 @@ async def auto():
         embed.add_field(name='참여려면', value=':o: 이모지를 클릭', inline=False)
         embed.add_field(name='불참여라면', value=':x: 이모지를 클릭', inline=False)
         embed.add_field(name='[!]', value='불참여시 사유를 아래 작성해주세요.', inline=True)
-        embed.set_footer(text='moonlight ONE System')
+        embed.set_footer(text='moonlight ONE system')
         contechChk = await client.get_channel(secrets.get('contect_chk')).send(embed=embed)
         await contechChk.add_reaction('⭕')
         await contechChk.add_reaction('❌')
@@ -70,7 +70,7 @@ def socketgo(stats, svname):
 async def serverstart(interaction: discord.Interaction, 서버이름: str):
     embed = discord.Embed(title=f'{서버이름}를 실행합니다.')
     embed.set_author(name=str(interaction.user.name) + '님에 의해')
-    embed.set_footer(text='moonlight ONE System')
+    embed.set_footer(text='moonlight ONE system')
     await interaction.response.send_message(embed=embed)
     socketgo('start/', str(서버이름))
 @serverstart.autocomplete('서버이름')
@@ -91,7 +91,7 @@ async def serverstart_autocomplete(
 async def serverstop(interaction: discord.Interaction,):
     embed = discord.Embed(title='모든 콘텐츠 서버가 종료되었습니다.')
     embed.set_author(name=str(interaction.user.name) + '님에 의해')
-    embed.set_footer(text='moonlight ONE System')
+    embed.set_footer(text='moonlight ONE system')
     await interaction.response.send_message(embed=embed)
     socketgo('stop/', 'all')
 @serverstop.error
@@ -108,7 +108,7 @@ async def chkplayer(interaction: discord.Interaction):
     yesterday = datetime.datetime.utcnow() - datetime.timedelta(days=8)
     today = datetime.datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
     embed = discord.Embed(title='정기컨텐츠 출석부')
-    embed.set_footer(text='moonlight ONE System')
+    embed.set_footer(text='moonlight ONE system')
     allplayers = [member.name for member in client.get_all_members() if not member.bot]
     print(allplayers)
     noplayer = ''
@@ -170,7 +170,7 @@ async def randomTeamSet(interaction: discord.Interaction, 팀원수: int):
     try:
         randomlist = [i.name for i in client.get_channel(interaction.user.voice.channel.id).members if not i.bot]
         embed = discord.Embed(title='랜덤으로 팀을 뽑았습니다.')
-        embed.set_footer(text='moonlight ONE System')
+        embed.set_footer(text='moonlight ONE system')
         b = 1
         list = ''
         while randomlist:
