@@ -112,6 +112,9 @@ async def chkplayer(interaction: discord.Interaction):
     async for message in channel.history(limit=None, before=today, after=yesterday):
         if str(message.author) == 'D-DAY#1973':
             print(message.id)
+            for reaction in message.reactions:
+                print(reaction)
+
 
 
 # @tree.command(guild=discord.Object(id=secrets.get('discordsv')), name='플레이시간', description='현실경제서버 누적 접속시간을 조회합니다.')
@@ -163,7 +166,7 @@ async def randomTeamSet(interaction: discord.Interaction, 팀원수: int):
                     tem = random.choice(randomlist)
                     list += str(tem)+'\n'
                     randomlist.remove(tem)
-            embed.add_field(name=f'{b}팀', value=f'{list}', inline=False)
+            embed.add_field(name=f'{b}팀', value=f'{list}', inline=True)
             b += 1
             list = ''
         await interaction.response.send_message(embed=embed)
