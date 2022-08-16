@@ -59,6 +59,8 @@ async def auto():
 async def before_auto():
     await client.wait_until_ready()
 
+
+
 @tree.command(guild=discord.Object(id=secrets.get('discordsv')), name='서버구동', description='마인크래프트 서버를 구동합니다.')
 async def serverstart(interaction: discord.Interaction, 서버이름: str):
     await interaction.response.send_message(f'{서버이름}를 실행합니다.')
@@ -129,6 +131,16 @@ async def realEconomyLivemap(interaction: discord.Interaction,):
 async def on_realEconomyLivemap_error(interaction: discord.Interaction, error: app_commands.AppCommandError):
     if isinstance(error, app_commands.CommandOnCooldown):
         await interaction.response.send_message(f"{int(error.retry_after)}초 후 명령어를 사용할 수 있습니다.", ephemeral=True)
+
+
+
+@tree.command(guild=discord.Object(id=secrets.get('discordsv')), name='랜덤팀', description='현재 통화방에 있는 사람들을 랜덤으로 배정합니다.')
+async def randomTeamSet(interaction: discord.Interaction, 팀수: int):
+    if 팀수 <= 1:
+        await interaction.response.send_message(f"팀 수는 2 이상 부터 가능합니다.", ephemeral=True)
+    else:
+        a = client
+        print('실행')
 
 
 
