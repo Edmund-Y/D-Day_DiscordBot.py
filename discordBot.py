@@ -59,17 +59,22 @@ async def auto():
 async def before_auto():
     await client.wait_until_ready()
 
-
+def socketgo(stats, svname):
+    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    client_socket.connect(('3.37.210.15', 56895))
+    client_socket.send(stats.encode()+svname.encode())
+    client_socket.close()
 
 @tree.command(guild=discord.Object(id=secrets.get('discordsv')), name='서버구동', description='마인크래프트 서버를 구동합니다.')
 async def serverstart(interaction: discord.Interaction, 서버이름: str):
     await interaction.response.send_message(f'{서버이름}를 실행합니다.')
+    socketgo('start/', str(서버이름))
 @serverstart.autocomplete('서버이름')
 async def serverstart_autocomplete(
     interaction: discord.Interaction,
     current: str,
 ) -> List[app_commands.Choice[str]]:
-    serverstart = ['현실경제', '채석장', '미니술래잡기']
+    serverstart = ['현실경제', '채석장']
     return [
         app_commands.Choice(name=selserver, value=selserver)
         for selserver in serverstart if current.lower() in selserver.lower()
@@ -80,10 +85,11 @@ async def serverstart_autocomplete(
 @tree.command(guild=discord.Object(id=secrets.get('discordsv')), name='콘텐츠서버종료', description='실행중인 콘텐츠 서버를 종료합니다.')
 @app_commands.checks.cooldown(1, 30, key=lambda i: (i.guild_id))
 async def serverstop(interaction: discord.Interaction,):
-    await interaction.response.send_message(f"콘텐츠서버에 서버종료 요청하였습니다.", ephemeral=True)
+    await interaction.response.send_message(f'콘텐츠서버에 서버종료 요청하였습니다.', ephemeral=True)
     embed = discord.Embed(title='모든 콘텐츠 서버가 종료되었습니다.')
     embed.set_author(name=str(interaction.user.name) + '님에 의해')
     await client.get_channel(interaction.channel_id).send(embed=embed)
+    socketgo('stop/', 'all')
 @serverstop.error
 async def on_serverstop_error(interaction: discord.Interaction, error: app_commands.AppCommandError):
     if isinstance(error, app_commands.CommandOnCooldown):
@@ -134,13 +140,13 @@ async def on_realEconomyLivemap_error(interaction: discord.Interaction, error: a
 
 
 
-@tree.command(guild=discord.Object(id=secrets.get('discordsv')), name='랜덤팀', description='현재 통화방에 있는 사람들을 랜덤으로 배정합니다.')
-async def randomTeamSet(interaction: discord.Interaction, 팀수: int):
-    if 팀수 <= 1:
-        await interaction.response.send_message(f"팀 수는 2 이상 부터 가능합니다.", ephemeral=True)
+@tree.command(guild=discord.Object(id=secrets.get('discordsv')), name='randomteam', description='We randomly assign people in the current call room.')
+async def randomTeamSet(interaction: discord.Interaction, count: int):
+    if count <= 1:
+        await interaction.response.send_message(f"The number of teams is 2 or more.", ephemeral=True)
     else:
-        a = client
-        print('실행')
+        #Command user's voice channel
+        print("player voice channel is ")
 
 
 
