@@ -13,8 +13,8 @@ with open(os.path.join(os.path.dirname(__file__), 'apikey.json')) as f:
 
 
 class aclient(discord.Client):
-    def __init__(self):
-        super().__init__(intents=discord.Intents.default())
+    def __init__(self, *, intents: discord.Intents):
+        super().__init__(intents=intents)
         self.synced = False
         self.added = False
 
@@ -27,7 +27,10 @@ class aclient(discord.Client):
             self.added = True
         print(f"We have logged in as {self.user}.")
         auto.start()
-client = aclient()
+
+intents = discord.Intents.default()
+intents.members = True
+client = aclient(intents=intents)
 tree = app_commands.CommandTree(client)
 
 
@@ -109,13 +112,12 @@ async def chkplayer(interaction: discord.Interaction):
     today = datetime.datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
     embed = discord.Embed(title='정기컨텐츠 출석부')
     embed.set_footer(text='moonlight ONE system')
-    allplayers = [member.name for member in client.get_all_members() if not member.bot]
-    print(allplayers)
+    allplayers = [member.name for member in client.get_guild(secrets.get('discordsv')).members if not member.bot]
     noplayer = ''
     if client.get_channel(secrets.get('voice_ch_all')).members:
         for i in client.get_channel(secrets.get('voice_ch_all')).members:
             noplayer += str(i.name) + '\n'
-            # allplayers.remove(i.name)
+            allplayers.remove(i.name)
         embed.add_field(name='참여', value=f'{noplayer}', inline=True)
     noplayer = ''
     async for message in channel.history(limit=None, before=today, after=yesterday):
@@ -125,9 +127,13 @@ async def chkplayer(interaction: discord.Interaction):
                     async for user in reaction.users():
                         if not user.bot:
                             noplayer += str(user.name)+'\n'
-                            # allplayers.remove(user.name)
+                            allplayers.remove(user.name)
                     embed.add_field(name='불참여(작성)', value=f'{noplayer}', inline=True)
-    embed.add_field(name='불참여(미작성)', value=f'추가중', inline=True)
+    noplayer = ''
+    if allplayers:
+        for aname in allplayers:
+            noplayer += str(user.name) + '\n'
+            embed.add_field(name='불참여(미작성)', value=f'{noplayer}', inline=True)
     await interaction.response.send_message(embed=embed)
 
 # @tree.command(guild=discord.Object(id=secrets.get('discordsv')), name='플레이시간', description='현실경제서버 누적 접속시간을 조회합니다.')
