@@ -126,14 +126,17 @@ async def chkplayer(interaction: discord.Interaction):
                 if str(reaction) == '❌':
                     async for user in reaction.users():
                         if not user.bot:
-                            noplayer += str(user.name)+'\n'
-                            allplayers.remove(user.name)
-                    embed.add_field(name='불참여(작성)', value=f'{noplayer}', inline=True)
+                            try:
+                                allplayers.remove(user.name)
+                                noplayer += str(user.name) + '\n'
+                            except ValueError as e:
+                                print(f'출석체크 X 후 참여 {user.name} : ' + str(e))
+            embed.add_field(name='불참여(작성)', value=f'{noplayer}', inline=True)
     noplayer = ''
     if allplayers:
         for aname in allplayers:
-            noplayer += str(user.name) + '\n'
-            embed.add_field(name='불참여(미작성)', value=f'{noplayer}', inline=True)
+            noplayer += str(aname) + '\n'
+        embed.add_field(name='불참여(미작성)', value=f'{noplayer}', inline=True)
     await interaction.response.send_message(embed=embed)
 
 # @tree.command(guild=discord.Object(id=secrets.get('discordsv')), name='플레이시간', description='현실경제서버 누적 접속시간을 조회합니다.')
