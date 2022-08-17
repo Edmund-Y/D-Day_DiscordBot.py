@@ -111,23 +111,24 @@ async def on_serverstop_error(interaction: discord.Interaction, error: app_comma
     if isinstance(error, app_commands.CommandOnCooldown):
         await interaction.response.send_message(f"{int(error.retry_after)}초 후 명령어를 사용할 수 있습니다.", ephemeral=True)
 
-
 @tree.command(guild=discord.Object(id=secrets.get('discordsv')), name='출석체크', description='정기컨텐츠 참여 확인합니다.')
 @app_commands.checks.has_permissions(manage_messages=True)
-async def chkplayer(interaction: discord.Interaction):
+async def chkplayer(interaction: discord.Interaction, 콘텐츠명: str):
     await interaction.response.send_message('잠시 후 출석부를 출력합니다.', ephemeral=True)
     channel = client.get_channel(secrets.get('contect_chk'))
     embed = discord.Embed(title='정기컨텐츠 출석부')
     embed.set_footer(text='moonlight ONE system')
-    yesterday = datetime.datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0) - datetime.timedelta(
-        days=5)
+    yesterday = datetime.datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0) - datetime.timedelta(days=5)
     today = datetime.datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
     allplayers = [member.id for member in client.get_guild(secrets.get('discordsv')).members if not member.bot]
     noplayer = ''
+    dbq = []
     if client.get_channel(secrets.get('voice_ch_all')).members:
         for i in client.get_channel(secrets.get('voice_ch_all')).members:
-            noplayer += str(await client.fetch_user(i.id)) + '\n'
+            uname = await client.fetch_user(i.id)
+            noplayer += str(uname) + '\n'
             allplayers.remove(i.id)
+            dbq.append([int(i.id), uname.name, f'{콘텐츠명}', '참여'])
         embed.add_field(name='참여', value=f'{noplayer}', inline=True)
     noplayer = ''
     temp = []
@@ -140,7 +141,9 @@ async def chkplayer(interaction: discord.Interaction):
                         if not user.bot:
                             try:
                                 allplayers.remove(user.id)
-                                noplayer += str(await client.fetch_user(user.id)) + '\n'
+                                uname = await client.fetch_user(user.id)
+                                noplayer += str(uname) + '\n'
+                                dbq.append([int(user.id), uname.name, f'{콘텐츠명}', '불참(작성)'])
                             except ValueError as e:
                                 print(f'출석체크 X 후 참여 {user.name} : ' + str(e))
             embed.add_field(name='불참여(작성)', value=f'{noplayer}', inline=True)
@@ -148,13 +151,32 @@ async def chkplayer(interaction: discord.Interaction):
     if allplayers:
         for aname in allplayers:
             try:
-                idn = await client.fetch_user(aname)
-                noplayer += str(idn) + '\n'
+                uname = await client.fetch_user(aname)
+                noplayer += str(uname) + '\n'
+                dbq.append([int(aname), uname.name, f'{콘텐츠명}', '불참(미작성)'])
                 time.sleep(0.26)
             except:
                 print(f'{aname} 에서 오류')
         embed.add_field(name='불참여(미작성)', value=f'{noplayer}', inline=True)
-        await client.get_channel(955021123702120448).send(embed=embed)
+    try:
+        conn = mariadb.connect(
+            user=secrets.get('sql_usr'),
+            password=secrets.get('sql_pw'),
+            host=secrets.get('sql_addr'),
+            port=secrets.get('sql_port'),
+            database=secrets.get('sql_usr')
+        )
+        cur = conn.cursor()
+        query = """insert into discord_attendance (idx, diname, contentname, dstats) values (%s, %s, %s, %s);"""
+        cur.executemany(query, dbq)
+        conn.commit()
+    except mariadb.Error as e:
+        print(f'Error connecting to MariaDB Platform: {e}')
+        sys.exit(1)
+    finally:
+        cur.close()
+        conn.close()
+    await client.get_channel(955021123702120448).send(embed=embed)
 
 
 # @tree.command(guild=discord.Object(id=secrets.get('discordsv')), name='플레이시간', description='현실경제서버 누적 접속시간을 조회합니다.')
