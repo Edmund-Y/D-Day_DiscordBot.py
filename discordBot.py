@@ -167,8 +167,9 @@ async def chkplayer(interaction: discord.Interaction, 콘텐츠명: str):
             database=secrets.get('sql_usr')
         )
         cur = conn.cursor()
-        query = """insert into discord_attendance (idx, diname, contentname, dstats) values (%s, %s, %s, %s);"""
+        query = """insert into discord_attendance (idx, diname, contentname, dstats) values (?, ?, ?, ?);"""
         cur.executemany(query, dbq)
+        cur.execute("""insert into discord_contect (contectname) values (?);""", (콘텐츠명, ))
         conn.commit()
     except mariadb.Error as e:
         print(f'Error connecting to MariaDB Platform: {e}')
@@ -176,7 +177,7 @@ async def chkplayer(interaction: discord.Interaction, 콘텐츠명: str):
     finally:
         cur.close()
         conn.close()
-    await client.get_channel(955021123702120448).send(embed=embed)
+    await client.get_channel(secrets.get('attendance_ch')).send(embed=embed)
 
 
 # @tree.command(guild=discord.Object(id=secrets.get('discordsv')), name='플레이시간', description='현실경제서버 누적 접속시간을 조회합니다.')
