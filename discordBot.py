@@ -108,10 +108,10 @@ async def on_serverstop_error(interaction: discord.Interaction, error: app_comma
 @app_commands.checks.has_permissions(manage_messages=True)
 async def chkplayer(interaction: discord.Interaction):
     channel = client.get_channel(secrets.get('contect_chk'))
-    yesterday = datetime.datetime.utcnow() - datetime.timedelta(days=8)
-    today = datetime.datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
     embed = discord.Embed(title='정기컨텐츠 출석부')
     embed.set_footer(text='moonlight ONE system')
+    yesterday = datetime.datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0) - datetime.timedelta(days=5)
+    today = datetime.datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
     allplayers = [member.name for member in client.get_guild(secrets.get('discordsv')).members if not member.bot]
     noplayer = ''
     if client.get_channel(secrets.get('voice_ch_all')).members:
@@ -120,10 +120,13 @@ async def chkplayer(interaction: discord.Interaction):
             allplayers.remove(i.name)
         embed.add_field(name='참여', value=f'{noplayer}', inline=True)
     noplayer = ''
+    temp = []
     async for message in channel.history(limit=None, before=today, after=yesterday):
+        temp.append(str(message.author.name))
         if str(message.author) == 'D-DAY#1973':
             for reaction in message.reactions:
                 if str(reaction) == '❌':
+                    print(temp)
                     async for user in reaction.users():
                         if not user.bot:
                             try:
@@ -131,7 +134,7 @@ async def chkplayer(interaction: discord.Interaction):
                                 noplayer += str(user.name) + '\n'
                             except ValueError as e:
                                 print(f'출석체크 X 후 참여 {user.name} : ' + str(e))
-            embed.add_field(name='불참여(작성)', value=f'{noplayer}', inline=True)
+        embed.add_field(name='불참여(작성)', value=f'{noplayer}', inline=True)
     noplayer = ''
     if allplayers:
         for aname in allplayers:
@@ -171,7 +174,6 @@ async def chkplayer(interaction: discord.Interaction):
 # async def on_realEconomyLivemap_error(interaction: discord.Interaction, error: app_commands.AppCommandError):
 #     if isinstance(error, app_commands.CommandOnCooldown):
 #         await interaction.response.send_message(f"{int(error.retry_after)}초 후 명령어를 사용할 수 있습니다.", ephemeral=True)
-
 
 
 @tree.command(guild=discord.Object(id=secrets.get('discordsv')), name='랜덤팀', description='현재 통화중인 사람을 랜덤으로 팀을 배분합니다.')
