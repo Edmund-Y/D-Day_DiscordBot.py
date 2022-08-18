@@ -111,6 +111,7 @@ async def on_serverstop_error(interaction: discord.Interaction, error: app_comma
     if isinstance(error, app_commands.CommandOnCooldown):
         await interaction.response.send_message(f"{int(error.retry_after)}초 후 명령어를 사용할 수 있습니다.", ephemeral=True)
 
+
 @tree.command(guild=discord.Object(id=secrets.get('discordsv')), name='출석체크', description='정기컨텐츠 참여 확인합니다.')
 @app_commands.checks.has_permissions(manage_messages=True)
 async def chkplayer(interaction: discord.Interaction, 콘텐츠명: str):
@@ -118,7 +119,8 @@ async def chkplayer(interaction: discord.Interaction, 콘텐츠명: str):
     channel = client.get_channel(secrets.get('contect_chk'))
     embed = discord.Embed(title='정기컨텐츠 출석부')
     embed.set_footer(text='moonlight ONE system')
-    yesterday = datetime.datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0) - datetime.timedelta(days=5)
+    yesterday = datetime.datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0) - datetime.timedelta(
+        days=5)
     today = datetime.datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
     allplayers = [member.id for member in client.get_guild(secrets.get('discordsv')).members if not member.bot]
     noplayer = ''
@@ -169,7 +171,7 @@ async def chkplayer(interaction: discord.Interaction, 콘텐츠명: str):
         cur = conn.cursor()
         query = """insert into discord_attendance (idx, diname, contentname, dstats) values (?, ?, ?, ?);"""
         cur.executemany(query, dbq)
-        cur.execute("""insert into discord_contect (contectname) values (?);""", (콘텐츠명, ))
+        cur.execute("""insert into discord_contect (contectname) values (?);""", (콘텐츠명,))
         conn.commit()
     except mariadb.Error as e:
         print(f'Error connecting to MariaDB Platform: {e}')
@@ -219,6 +221,71 @@ async def test(interaction: discord.Interaction):
     test = await client.fetch_user(893497384175296572)
     await interaction.response.send_message(f'{test}', ephemeral=True)
 
+@tree.command(guild=discord.Object(id=secrets.get('discordsv')), name='생일삭제', description='등록된 생일을 제거합니다.')
+async def test(interaction: discord.Interaction):
+    try:
+        conn = mariadb.connect(
+            user=secrets.get('sql_usr'),
+            password=secrets.get('sql_pw'),
+            host=secrets.get('sql_addr'),
+            port=secrets.get('sql_port'),
+            database=secrets.get('sql_usr')
+        )
+        cur = conn.cursor()
+        cur.execute("""SELECT birthday FROM discord_birthday WHERE idx=(?);""", (int(interaction.user.id),))
+        rsu = cur.fetchone()
+        if rsu is None:
+            await interaction.response.send_message(f'등록된 생일이 없습니다.', ephemeral=True)
+        else:
+            cur.execute("""DELETE FROM discord_birthday WHERE idx=(?);""", (int(interaction.user.id),))
+            conn.commit()
+            await interaction.response.send_message(f'등록된 생일을 삭제했습니다.', ephemeral=True)
+    except mariadb.Error as e:
+        print(f'Error connecting to MariaDB Platform: {e}')
+        sys.exit(1)
+    finally:
+        cur.close()
+        conn.close()
+
+
+@tree.command(guild=discord.Object(id=secrets.get('discordsv')), name='생일등록', description='자신을 생일을 등록할 수 있습니다.')
+async def birthdayset(interaction: discord.Interaction, 월: int, 일: int):
+    if 월 > 12 or 월 < 1:
+        await interaction.response.send_message(f'월은 1월~12월 까지만 등록할 수 있습니다.', ephemeral=True)
+    elif 일 < 1 or 일 > 31:
+        await interaction.response.send_message(f'일은 1일~31일 까지만 등록할 수 있습니다.', ephemeral=True)
+    elif 월 == 2 and 일 > 28:
+        await interaction.response.send_message(f'2월은 28일 까지만 등록할 수 있습니다.', ephemeral=True)
+    elif 월 < 7 and 월 % 2 == 0 and 일 == 31:
+        await interaction.response.send_message(f'{월}월은 30일 까지만 등록할 수 있습니다.', ephemeral=True)
+    elif 월 > 8 and 월 % 2 == 1 and 일 == 31:
+        await interaction.response.send_message(f'{월}월은 30일 까지만 등록할 수 있습니다.', ephemeral=True)
+    else:
+        try:
+            conn = mariadb.connect(
+                user=secrets.get('sql_usr'),
+                password=secrets.get('sql_pw'),
+                host=secrets.get('sql_addr'),
+                port=secrets.get('sql_port'),
+                database=secrets.get('sql_usr')
+            )
+            cur = conn.cursor()
+            cur.execute("""SELECT birthday FROM discord_birthday WHERE idx=(?);""", (int(interaction.user.id),))
+            rsu = cur.fetchone()
+            if rsu is None:
+                cur.execute("""insert into discord_birthday (idx, pname, birthday) values (?, ?, ?);""", (str(interaction.user.id), str(interaction.user), str(datetime.datetime.now().year)+'-'+str(월)+'-'+str(일)))
+                conn.commit()
+                await interaction.response.send_message(f'생일을 등록했습니다.', ephemeral=True)
+            else:
+                mybirth = str(rsu[0]).split('-')
+                await interaction.response.send_message(f'생일이 등록되어있습니다. ({mybirth[1]}월 {mybirth[2]}일)\n등록된 생일을 제거하려면 /생일삭제 를 이용해주세요', ephemeral=True)
+        except mariadb.Error as e:
+            print(f'Error connecting to MariaDB Platform: {e}')
+            sys.exit(1)
+        finally:
+            cur.close()
+            conn.close()
+
 
 @tree.command(guild=discord.Object(id=secrets.get('discordsv')), name='랜덤팀', description='현재 통화중인 사람을 랜덤으로 팀을 배분합니다.')
 async def randomTeamSet(interaction: discord.Interaction, 팀원수: int):
@@ -227,16 +294,16 @@ async def randomTeamSet(interaction: discord.Interaction, 팀원수: int):
         embed = discord.Embed(title='랜덤으로 팀을 뽑았습니다.')
         embed.set_footer(text='moonlight ONE system')
         b = 1
-        list = ''
+        lists = ''
         while randomlist:
             for a in range(1, 1 + int(팀원수)):
                 if randomlist:
                     tem = random.choice(randomlist)
-                    list += str(tem) + '\n'
+                    lists += str(tem) + '\n'
                     randomlist.remove(tem)
-            embed.add_field(name=f'{b}팀', value=f'{list}', inline=True)
+            embed.add_field(name=f'{b}팀', value=f'{lists}', inline=True)
             b += 1
-            list = ''
+            lists = ''
         await interaction.response.send_message(embed=embed)
     except AttributeError:
         await interaction.response.send_message('현재 접속중인 통화방이 없습니다.', ephemeral=True)
