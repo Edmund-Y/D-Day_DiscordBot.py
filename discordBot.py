@@ -26,17 +26,18 @@ class aclient(discord.Client):
         print(f"We have logged in as {self.user}.")
         auto.start()
 
-
 intents = discord.Intents.default()
 intents.members = True
 client = aclient(intents=intents)
 tree = app_commands.CommandTree(client)
 
-
 @tasks.loop(minutes=1)
 async def auto():
     now = datetime.datetime.now()
     print('현재', now.hour, '시', now.minute, '분 입니다.(', datetime.datetime.today().weekday(), ')')
+    if now.hour == 10 and now.minute == 2:
+        print(datetime.datetime.now().month)
+        print(datetime.datetime.now().day)
     if datetime.datetime.today().weekday() == 0 and now.hour == 9 and now.minute == 0:
         day5 = now + datetime.datetime.timedelta(days=5)
         embed_one = discord.Embed(
@@ -61,20 +62,17 @@ async def auto():
         contechChk = await client.get_channel(secrets.get('contect_chk')).send(embed=embed)
         await contechChk.add_reaction('⭕')
         await contechChk.add_reaction('❌')
-
-
 @auto.before_loop
 async def before_auto():
     await client.wait_until_ready()
 
 
+#서버구동 및 종료
 def socketgo(stats, svname):
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     client_socket.connect(('3.37.210.15', 56895))
     client_socket.send(stats.encode() + svname.encode())
     client_socket.close()
-
-
 @tree.command(guild=discord.Object(id=secrets.get('discordsv')), name='서버구동', description='마인크래프트 서버를 구동합니다.')
 async def serverstart(interaction: discord.Interaction, 서버이름: str):
     embed = discord.Embed(title=f'{서버이름}를 실행합니다.')
@@ -82,8 +80,6 @@ async def serverstart(interaction: discord.Interaction, 서버이름: str):
     embed.set_footer(text='moonlight ONE system')
     await interaction.response.send_message(embed=embed)
     socketgo('start/', str(서버이름))
-
-
 @serverstart.autocomplete('서버이름')
 async def serverstart_autocomplete(
         interaction: discord.Interaction,
@@ -94,8 +90,6 @@ async def serverstart_autocomplete(
         app_commands.Choice(name=selserver, value=selserver)
         for selserver in serverstart if current.lower() in selserver.lower()
     ]
-
-
 @tree.command(guild=discord.Object(id=secrets.get('discordsv')), name='콘텐츠서버종료', description='실행중인 콘텐츠 서버를 종료합니다.')
 @app_commands.checks.cooldown(1, 30, key=lambda i: (i.guild_id))
 async def serverstop(interaction: discord.Interaction, ):
@@ -246,8 +240,6 @@ async def test(interaction: discord.Interaction):
     finally:
         cur.close()
         conn.close()
-
-
 @tree.command(guild=discord.Object(id=secrets.get('discordsv')), name='생일등록', description='자신을 생일을 등록할 수 있습니다.')
 async def birthdayset(interaction: discord.Interaction, 월: int, 일: int):
     if 월 > 12 or 월 < 1:
@@ -270,15 +262,14 @@ async def birthdayset(interaction: discord.Interaction, 월: int, 일: int):
                 database=secrets.get('sql_usr')
             )
             cur = conn.cursor()
-            cur.execute("""SELECT birthday FROM discord_birthday WHERE idx=(?);""", (int(interaction.user.id),))
+            cur.execute("""SELECT bmonth, bday FROM discord_birthday WHERE idx=(?);""", (int(interaction.user.id),))
             rsu = cur.fetchone()
             if rsu is None:
-                cur.execute("""insert into discord_birthday (idx, pname, birthday) values (?, ?, ?);""", (str(interaction.user.id), str(interaction.user), str(datetime.datetime.now().year)+'-'+str(월)+'-'+str(일)))
+                cur.execute("""insert into discord_birthday (idx, pname, bmonth, bday) values (?, ?, ?, ?);""", (str(interaction.user.id), str(interaction.user), int(월), int(일)))
                 conn.commit()
                 await interaction.response.send_message(f'생일을 등록했습니다.', ephemeral=True)
             else:
-                mybirth = str(rsu[0]).split('-')
-                await interaction.response.send_message(f'생일이 등록되어있습니다. ({mybirth[1]}월 {mybirth[2]}일)\n등록된 생일을 제거하려면 /생일삭제 를 이용해주세요', ephemeral=True)
+                await interaction.response.send_message(f'생일이 등록되어있습니다. ({rsu[0]}월 {rsu[1]}일)\n등록된 생일을 제거하려면 /생일삭제 를 이용해주세요', ephemeral=True)
         except mariadb.Error as e:
             print(f'Error connecting to MariaDB Platform: {e}')
             sys.exit(1)
