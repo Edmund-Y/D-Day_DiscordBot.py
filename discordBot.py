@@ -71,6 +71,7 @@ async def auto():
             cur = conn.cursor()
             cur.execute("""SELECT * FROM discord_birthday;""")
             rsu = cur.fetchall()
+            rsu = cur.fetchall()
             birthplayer = ''
             if rsu:
                 for bir in rsu:
@@ -255,11 +256,11 @@ async def test(interaction: discord.Interaction):
         cur.execute("""SELECT birthday FROM discord_birthday WHERE idx=(?);""", (int(interaction.user.id),))
         rsu = cur.fetchone()
         if rsu is None:
-            await interaction.response.send_message(f'등록된 생일이 없습니다.', ephemeral=True)
+            await interaction.response.send_message(f'등록된 생일이 없습니다.')
         else:
             cur.execute("""DELETE FROM discord_birthday WHERE idx=(?);""", (int(interaction.user.id),))
             conn.commit()
-            await interaction.response.send_message(f'등록된 생일을 삭제했습니다.', ephemeral=True)
+            await interaction.response.send_message(f'등록된 생일을 삭제했습니다.')
     except mariadb.Error as e:
         print(f'Error connecting to MariaDB Platform: {e}')
         sys.exit(1)
@@ -293,9 +294,9 @@ async def birthdayset(interaction: discord.Interaction, 월: int, 일: int):
             if rsu is None:
                 cur.execute("""insert into discord_birthday (idx, pname, bmonth, bday) values (?, ?, ?, ?);""", (str(interaction.user.id), str(interaction.user), int(월), int(일)))
                 conn.commit()
-                await interaction.response.send_message(f'생일을 등록했습니다.', ephemeral=True)
+                await interaction.response.send_message(f'생일을 등록했습니다.')
             else:
-                await interaction.response.send_message(f'생일이 등록되어있습니다. ({rsu[0]}월 {rsu[1]}일)\n등록된 생일을 제거하려면 /생일삭제 를 이용해주세요', ephemeral=True)
+                await interaction.response.send_message(f'생일이 등록되어있습니다. ({rsu[0]}월 {rsu[1]}일)\n등록된 생일을 제거하려면 /생일삭제 를 이용해주세요')
         except mariadb.Error as e:
             print(f'Error connecting to MariaDB Platform: {e}')
             sys.exit(1)
