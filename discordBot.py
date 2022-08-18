@@ -84,7 +84,6 @@ async def auto():
                 await client.get_channel(secrets.get('defaultalk')).send(embed=embed)
         except mariadb.Error as e:
             print(f'Error connecting to MariaDB Platform: {e}')
-            sys.exit(1)
         finally:
             cur.close()
             conn.close()
@@ -195,7 +194,6 @@ async def chkplayer(interaction: discord.Interaction, 콘텐츠명: str):
         conn.commit()
     except mariadb.Error as e:
         print(f'Error connecting to MariaDB Platform: {e}')
-        sys.exit(1)
     finally:
         cur.close()
         conn.close()
@@ -222,7 +220,6 @@ async def chkplayer(interaction: discord.Interaction, 콘텐츠명: str):
 #         conn.close()
 #     except mariadb.Error as e:
 #         print(f'Error connecting to MariaDB Platform: {e}')
-#         sys.exit(1)
 
 
 # @tree.command(guild=discord.Object(id=secrets.get('discordsv')), name='현경실시간지도', description='현경서버의 실시간 지도를 표출합니다.')
@@ -237,23 +234,41 @@ async def chkplayer(interaction: discord.Interaction, 콘텐츠명: str):
 
 @tree.command(guild=discord.Object(id=secrets.get('discordsv')), name='test', description='테스트용 명령어입니다.')
 @app_commands.checks.has_permissions(manage_messages=True)
-async def test(interaction: discord.Interaction, 유저: id):
-    test = await client.fetch_user(893497384175296572)
-    await interaction.response.send_message(f'{test}', ephemeral=True)
+async def test(interaction: discord.Interaction, 유저: discord.User):
+    await interaction.response.send_message(f'{유저}', ephemeral=True)
 
 
-# @tree.command(guild=discord.Object(id=secrets.get('discordsv')), name='참여도', description='자신의')
-# async def test(interaction: discord.Interaction):
-#     test = await client.fetch_user(893497384175296572)
-#     await interaction.response.send_message(f'{test}', ephemeral=True)
-#     ratio = [34, 32, 16]
-#     labels = ['참여', '불참(작성)', '불참(미작성)']
-#     explode = [0.05, 0.05, 0.05]
-#     colors = ['#ff9999', '#ffc000', '#8fd9b6']
-#
-#     plt.rc('font', family='NanumGothic')
-#     plt.pie(ratio, labels=labels, autopct='%.1f%%', startangle=260, counterclock=False, explode=explode, shadow=True, colors=colors)
-#     plt.savefig('./userdata/참여현황.png')
+@tree.command(guild=discord.Object(id=secrets.get('discordsv')), name='참여도', description='자신의')
+async def test(interaction: discord.Interaction, 유저: discord.User):
+    try:
+        conn = mariadb.connect(
+            user=secrets.get('sql_usr'),
+            password=secrets.get('sql_pw'),
+            host=secrets.get('sql_addr'),
+            port=secrets.get('sql_port'),
+            database=secrets.get('sql_usr')
+        )
+        cur = conn.cursor()
+        cur.execute("""SELECT dstats FROM discord_birthday WHERE diname=(?);""", (str(유저),))
+        rsu = cur.fetchall()
+        print(rsu)
+        # if rsu is None:
+        #     await interaction.response.send_message(f'없는 유저입니다.')
+        # else:
+        #     ratio = [34, 32, 16]
+        #     labels = ['참여', '불참(작성)', '불참(미작성)']
+        #     explode = [0.05, 0.05, 0.05]
+        #     colors = ['#ff9999', '#ffc000', '#8fd9b6']
+        #     plt.rc('font', family='NanumGothic')
+        #     plt.pie(ratio, labels=labels, autopct='%.1f%%', startangle=260, counterclock=False, explode=explode, shadow=True, colors=colors)
+        #     plt.savefig('./userdata/참여현황.png')
+        #     f = discord.File('./userdata/참여현황.png')
+        #     await interaction.response.send_message(file=f)
+    except mariadb.Error as e:
+        print(f'Error connecting to MariaDB Platform: {e}')
+    finally:
+        cur.close()
+        conn.close()
 
 @tree.command(guild=discord.Object(id=secrets.get('discordsv')), name='생일삭제', description='등록된 생일을 제거합니다.')
 async def test(interaction: discord.Interaction):
@@ -276,7 +291,6 @@ async def test(interaction: discord.Interaction):
             await interaction.response.send_message(f'등록된 생일을 삭제했습니다.')
     except mariadb.Error as e:
         print(f'Error connecting to MariaDB Platform: {e}')
-        sys.exit(1)
     finally:
         cur.close()
         conn.close()
@@ -312,7 +326,6 @@ async def birthdayset(interaction: discord.Interaction, 월: int, 일: int):
                 await interaction.response.send_message(f'생일이 등록되어있습니다. ({rsu[0]}월 {rsu[1]}일)\n등록된 생일을 제거하려면 /생일삭제 를 이용해주세요')
         except mariadb.Error as e:
             print(f'Error connecting to MariaDB Platform: {e}')
-            sys.exit(1)
         finally:
             cur.close()
             conn.close()
@@ -338,6 +351,52 @@ async def randomTeamSet(interaction: discord.Interaction, 팀원수: int):
         await interaction.response.send_message(embed=embed)
     except AttributeError:
         await interaction.response.send_message('현재 접속중인 통화방이 없습니다.', ephemeral=True)
+
+
+@tree.command(guild=discord.Object(id=secrets.get('discordsv')), name='생일목록', description='생일자 목록을 조회합니다.')
+async def birthselect(interaction: discord.Interaction, 조회항목: str):
+    try:
+        conn = mariadb.connect(
+            user=secrets.get('sql_usr'),
+            password=secrets.get('sql_pw'),
+            host=secrets.get('sql_addr'),
+            port=secrets.get('sql_port'),
+            database=secrets.get('sql_usr')
+        )
+        cur = conn.cursor()
+        if 조회항목 == '지난 달':
+            temmou = datetime.datetime.now().month-1
+        elif 조회항목 == '이번 달':
+            temmou = datetime.datetime.now().month
+        elif 조회항목 == '다음 달':
+            temmou = datetime.datetime.now().month+1
+        cur.execute("""SELECT pname FROM discord_birthday WHERE bmonth=(?);""", (temmou,))
+        rsu = cur.fetchone()
+        if rsu is None:
+            embed = discord.Embed(title=f'{조회항목}의 생일자가 없습니다.')
+        else:
+            embed = discord.Embed(title=f'{조회항목}의 생일자입니다.')
+            noplayer = ''
+            for na in rsu:
+                noplayer += '```'+str(na)+'```\n'
+            embed.add_field(name=str(len(rsu))+'명', value=f'{noplayer}', inline=True)
+    except mariadb.Error as e:
+        print(f'Error connecting to MariaDB Platform: {e}')
+    finally:
+        cur.close()
+        conn.close()
+    embed.set_footer(text='moonlight ONE system')
+    await interaction.response.send_message(embed=embed)
+@birthselect.autocomplete('조회항목')
+async def birthselect_autocomplete(
+        interaction: discord.Interaction,
+        current: str,
+) -> List[app_commands.Choice[str]]:
+    birthselect = ['지난 달', '이번 달', '다음 달']
+    return [
+        app_commands.Choice(name=birsel, value=birsel)
+        for birsel in birthselect if current.lower() in birsel.lower()
+    ]
 
 
 client.run(secrets.get('discord_token'))
