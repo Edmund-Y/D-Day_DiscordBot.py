@@ -370,23 +370,26 @@ async def birthselect(interaction: discord.Interaction, 조회항목: str):
             temmou = datetime.datetime.now().month
         elif 조회항목 == '다음 달':
             temmou = datetime.datetime.now().month+1
-        cur.execute("""SELECT pname FROM discord_birthday WHERE bmonth=(?);""", (temmou,))
-        rsu = cur.fetchone()
-        if rsu is None:
-            embed = discord.Embed(title=f'{조회항목}의 생일자가 없습니다.')
+        if temmou:
+            cur.execute("""SELECT pname FROM discord_birthday WHERE bmonth=(?);""", (temmou,))
+            rsu = cur.fetchone()
+            if rsu is None:
+                embed = discord.Embed(title=f'{조회항목}의 생일자가 없습니다.')
+            else:
+                embed = discord.Embed(title=f'{조회항목}의 생일자입니다.')
+                noplayer = ''
+                for na in rsu:
+                    noplayer += '```'+str(na)+'```\n'
+                embed.add_field(name=str(len(rsu))+'명', value=f'{noplayer.rstrip("#")}', inline=True)
+            embed.set_footer(text='moonlight ONE system')
+            await interaction.response.send_message(embed=embed)
         else:
-            embed = discord.Embed(title=f'{조회항목}의 생일자입니다.')
-            noplayer = ''
-            for na in rsu:
-                noplayer += '```'+str(na)+'```\n'
-            embed.add_field(name=str(len(rsu))+'명', value=f'{noplayer}', inline=True)
+            await interaction.response.send_message('잘못된 선택입니다.', ephemeral=True)
     except mariadb.Error as e:
         print(f'Error connecting to MariaDB Platform: {e}')
     finally:
         cur.close()
         conn.close()
-    embed.set_footer(text='moonlight ONE system')
-    await interaction.response.send_message(embed=embed)
 @birthselect.autocomplete('조회항목')
 async def birthselect_autocomplete(
         interaction: discord.Interaction,
