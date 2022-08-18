@@ -253,7 +253,7 @@ async def test(interaction: discord.Interaction):
             database=secrets.get('sql_usr')
         )
         cur = conn.cursor()
-        cur.execute("""SELECT birthday FROM discord_birthday WHERE idx=(?);""", (int(interaction.user.id),))
+        cur.execute("""SELECT idx FROM discord_birthday WHERE idx=(?);""", (int(interaction.user.id),))
         rsu = cur.fetchone()
         if rsu is None:
             await interaction.response.send_message(f'등록된 생일이 없습니다.')
