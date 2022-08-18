@@ -1,7 +1,6 @@
 # pip install -U git+https://github.com/Rapptz/discord.py
-import os, json, sys, mariadb, discord, socket, datetime
-import random
-import time
+import os, json, sys, mariadb, discord, socket, datetime, random, time
+import matplotlib.pyplot as plt
 from typing import List
 from discord import app_commands
 from discord.ext import tasks
@@ -238,9 +237,23 @@ async def chkplayer(interaction: discord.Interaction, 콘텐츠명: str):
 
 @tree.command(guild=discord.Object(id=secrets.get('discordsv')), name='test', description='테스트용 명령어입니다.')
 @app_commands.checks.has_permissions(manage_messages=True)
-async def test(interaction: discord.Interaction):
+async def test(interaction: discord.Interaction, 유저: id):
     test = await client.fetch_user(893497384175296572)
     await interaction.response.send_message(f'{test}', ephemeral=True)
+
+
+# @tree.command(guild=discord.Object(id=secrets.get('discordsv')), name='참여도', description='자신의')
+# async def test(interaction: discord.Interaction):
+#     test = await client.fetch_user(893497384175296572)
+#     await interaction.response.send_message(f'{test}', ephemeral=True)
+#     ratio = [34, 32, 16]
+#     labels = ['참여', '불참(작성)', '불참(미작성)']
+#     explode = [0.05, 0.05, 0.05]
+#     colors = ['#ff9999', '#ffc000', '#8fd9b6']
+#
+#     plt.rc('font', family='NanumGothic')
+#     plt.pie(ratio, labels=labels, autopct='%.1f%%', startangle=260, counterclock=False, explode=explode, shadow=True, colors=colors)
+#     plt.savefig('./userdata/참여현황.png')
 
 @tree.command(guild=discord.Object(id=secrets.get('discordsv')), name='생일삭제', description='등록된 생일을 제거합니다.')
 async def test(interaction: discord.Interaction):
