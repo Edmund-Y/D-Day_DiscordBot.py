@@ -35,9 +35,6 @@ tree = app_commands.CommandTree(client)
 async def auto():
     now = datetime.datetime.now()
     print('현재', now.hour, '시', now.minute, '분 입니다.(', datetime.datetime.today().weekday(), ')')
-    if now.hour == 10 and now.minute == 2:
-        print(datetime.datetime.now().month)
-        print(datetime.datetime.now().day)
     if datetime.datetime.today().weekday() == 0 and now.hour == 9 and now.minute == 0:
         day5 = now + datetime.datetime.timedelta(days=5)
         embed_one = discord.Embed(
@@ -62,6 +59,35 @@ async def auto():
         contechChk = await client.get_channel(secrets.get('contect_chk')).send(embed=embed)
         await contechChk.add_reaction('⭕')
         await contechChk.add_reaction('❌')
+    if now.hour == 9 and now.minute == 0:
+        try:
+            conn = mariadb.connect(
+                user=secrets.get('sql_usr'),
+                password=secrets.get('sql_pw'),
+                host=secrets.get('sql_addr'),
+                port=secrets.get('sql_port'),
+                database=secrets.get('sql_usr')
+            )
+            cur = conn.cursor()
+            cur.execute("""SELECT * FROM discord_birthday;""")
+            rsu = cur.fetchall()
+            birthplayer = ''
+            if rsu:
+                for bir in rsu:
+                    if str(bir[2]) == str(datetime.datetime.now().month):# and str(bir[3]) == str(datetime.datetime.now().day):
+                        birthplayer += '```'+str(bir[1]).rstrip("#")+'님```\n'
+            if len(birthplayer) > 2:
+                embed = discord.Embed(title='생일을 축하해주세요~')
+                embed.set_footer(text='moonlight ONE system')
+                embed.add_field(name='오늘 생일자', value=f'{birthplayer}', inline=False)
+                embed.set_image(url='https://cdn.pixabay.com/photo/2016/11/18/15/46/birthday-1835443_960_720.jpg')
+                await client.get_channel(secrets.get('defaultalk')).send(embed=embed)
+        except mariadb.Error as e:
+            print(f'Error connecting to MariaDB Platform: {e}')
+            sys.exit(1)
+        finally:
+            cur.close()
+            conn.close()
 @auto.before_loop
 async def before_auto():
     await client.wait_until_ready()
@@ -122,7 +148,7 @@ async def chkplayer(interaction: discord.Interaction, 콘텐츠명: str):
     if client.get_channel(secrets.get('voice_ch_all')).members:
         for i in client.get_channel(secrets.get('voice_ch_all')).members:
             uname = await client.fetch_user(i.id)
-            noplayer += str(uname) + '\n'
+            noplayer += '```'+str(uname) + '```\n'
             allplayers.remove(i.id)
             dbq.append([int(i.id), uname.name, f'{콘텐츠명}', '참여'])
         embed.add_field(name='참여', value=f'{noplayer}', inline=True)
@@ -138,7 +164,7 @@ async def chkplayer(interaction: discord.Interaction, 콘텐츠명: str):
                             try:
                                 allplayers.remove(user.id)
                                 uname = await client.fetch_user(user.id)
-                                noplayer += str(uname) + '\n'
+                                noplayer += '```'+str(uname) + '```\n'
                                 dbq.append([int(user.id), uname.name, f'{콘텐츠명}', '불참(작성)'])
                             except ValueError as e:
                                 print(f'출석체크 X 후 참여 {user.name} : ' + str(e))
@@ -148,7 +174,7 @@ async def chkplayer(interaction: discord.Interaction, 콘텐츠명: str):
         for aname in allplayers:
             try:
                 uname = await client.fetch_user(aname)
-                noplayer += str(uname) + '\n'
+                noplayer += '```'+str(uname) + '```\n'
                 dbq.append([int(aname), uname.name, f'{콘텐츠명}', '불참(미작성)'])
                 time.sleep(0.26)
             except:
