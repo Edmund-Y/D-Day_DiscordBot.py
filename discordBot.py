@@ -2,20 +2,16 @@
 import os, json, sys, mariadb, discord, socket, datetime, random, time, shutil
 import matplotlib.pyplot as plt
 import matplotlib as mpl
-from matplotlib import font_manager,rc
+import matplotlib.font_manager as fm
 from typing import List
 from discord import app_commands
 from discord.ext import tasks
 
 with open(os.path.join(os.path.dirname(__file__), 'apikey.json')) as f:
     secrets = json.loads(f.read())
-#C:\Users\SpaceN\.matplotlib
 
-fontdir = mpl.matplotlib_fname().replace('matplotlibrc', '\\fonts\\ttf')
-if not os.path.isfile(fontdir+'\MaruBuri-Regular.ttf'):
-    shutil.rmtree(mpl.get_cachedir())
-    shutil.copyfile('./public/MaruBuri-Regular.ttf', fontdir+'\MaruBuri-Regular.ttf')
-    print(mpl.get_cachedir())
+
+# !rm -rf ~/.cache/matplotlib/*
 
 class aclient(discord.Client):
     def __init__(self, *, intents: discord.Intents):
@@ -33,10 +29,12 @@ class aclient(discord.Client):
         print(f"We have logged in as {self.user}.")
         auto.start()
 
+
 intents = discord.Intents.default()
 intents.members = True
 client = aclient(intents=intents)
 tree = app_commands.CommandTree(client)
+
 
 @tasks.loop(minutes=1)
 async def auto():
@@ -82,8 +80,9 @@ async def auto():
             birthplayer = ''
             if rsu:
                 for bir in rsu:
-                    if str(bir[2]) == str(datetime.datetime.now().month):# and str(bir[3]) == str(datetime.datetime.now().day):
-                        birthplayer += '```'+str(bir[1]).rstrip("#")+'님```\n'
+                    if str(bir[2]) == str(
+                            datetime.datetime.now().month):  # and str(bir[3]) == str(datetime.datetime.now().day):
+                        birthplayer += '```' + str(bir[1]).rstrip("#") + '님```\n'
             if len(birthplayer) > 2:
                 embed = discord.Embed(title='생일을 축하해주세요~')
                 embed.set_footer(text='moonlight ONE system')
@@ -95,17 +94,21 @@ async def auto():
         finally:
             cur.close()
             conn.close()
+
+
 @auto.before_loop
 async def before_auto():
     await client.wait_until_ready()
 
 
-#서버구동 및 종료
+# 서버구동 및 종료
 def socketgo(stats, svname):
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     client_socket.connect(('3.37.210.15', 56895))
     client_socket.send(stats.encode() + svname.encode())
     client_socket.close()
+
+
 @tree.command(guild=discord.Object(id=secrets.get('discordsv')), name='서버구동', description='마인크래프트 서버를 구동합니다.')
 async def serverstart(interaction: discord.Interaction, 서버이름: str):
     embed = discord.Embed(title=f'{서버이름}를 실행합니다.')
@@ -113,6 +116,8 @@ async def serverstart(interaction: discord.Interaction, 서버이름: str):
     embed.set_footer(text='moonlight ONE system')
     await interaction.response.send_message(embed=embed)
     socketgo('start/', str(서버이름))
+
+
 @serverstart.autocomplete('서버이름')
 async def serverstart_autocomplete(
         interaction: discord.Interaction,
@@ -123,6 +128,8 @@ async def serverstart_autocomplete(
         app_commands.Choice(name=selserver, value=selserver)
         for selserver in serverstart if current.lower() in selserver.lower()
     ]
+
+
 @tree.command(guild=discord.Object(id=secrets.get('discordsv')), name='콘텐츠서버종료', description='실행중인 콘텐츠 서버를 종료합니다.')
 @app_commands.checks.cooldown(1, 30, key=lambda i: (i.guild_id))
 async def serverstop(interaction: discord.Interaction, ):
@@ -155,7 +162,7 @@ async def chkplayer(interaction: discord.Interaction, 콘텐츠명: str):
     if client.get_channel(secrets.get('voice_ch_all')).members:
         for i in client.get_channel(secrets.get('voice_ch_all')).members:
             uname = await client.fetch_user(i.id)
-            noplayer += '```'+str(uname) + '```\n'
+            noplayer += '```' + str(uname) + '```\n'
             allplayers.remove(i.id)
             dbq.append([int(i.id), uname.name, f'{콘텐츠명}', '참여'])
         embed.add_field(name='참여', value=f'{noplayer}', inline=True)
@@ -171,7 +178,7 @@ async def chkplayer(interaction: discord.Interaction, 콘텐츠명: str):
                             try:
                                 allplayers.remove(user.id)
                                 uname = await client.fetch_user(user.id)
-                                noplayer += '```'+str(uname) + '```\n'
+                                noplayer += '```' + str(uname) + '```\n'
                                 dbq.append([int(user.id), uname.name, f'{콘텐츠명}', '불참(작성)'])
                             except ValueError as e:
                                 print(f'출석체크 X 후 참여 {user.name} : ' + str(e))
@@ -181,7 +188,7 @@ async def chkplayer(interaction: discord.Interaction, 콘텐츠명: str):
         for aname in allplayers:
             try:
                 uname = await client.fetch_user(aname)
-                noplayer += '```'+str(uname) + '```\n'
+                noplayer += '```' + str(uname) + '```\n'
                 dbq.append([int(aname), uname.name, f'{콘텐츠명}', '불참(미작성)'])
                 time.sleep(0.26)
             except:
@@ -277,10 +284,18 @@ async def participation(interaction: discord.Interaction, 디코닉네임: disco
                 labels.append(key)
                 ratio.append(value)
             if labels:
-                del colors[0-(3-len(labels))]
-                del explode[0-(3-len(labels))]
+                if len(labels) == 1:
+                    del colors[-1]
+                    del explode[-1]
+                    del colors[-1]
+                    del explode[-1]
+                elif len(labels) == 2:
+                    del colors[-1]
+                    del explode[-1]
                 plt.rc('font', family='MaruBuri')
-                plt.pie(ratio, labels=labels, autopct='%.1f%%', startangle=260, counterclock=False, explode=explode, shadow=True, colors=colors)
+                # plt.rcParams["font.family"] = "MaruBuri"
+                plt.pie(ratio, labels=labels, autopct='%.1f%%', startangle=260, counterclock=False, explode=explode,
+                        shadow=True, colors=colors)
                 plt.savefig('./public/참여현황.png')
                 f = discord.File('./public/참여현황.png')
                 await interaction.response.send_message(file=f)
@@ -291,13 +306,16 @@ async def participation(interaction: discord.Interaction, 디코닉네임: disco
     finally:
         cur.close()
         conn.close()
+
+
 @participation.error
 async def on_participation_error(interaction: discord.Interaction, error: app_commands.AppCommandError):
     if isinstance(error, app_commands.CommandOnCooldown):
         await interaction.response.send_message(f"{int(error.retry_after)}초 후 명령어를 사용할 수 있습니다.", ephemeral=True)
 
+
 @tree.command(guild=discord.Object(id=secrets.get('discordsv')), name='생일삭제', description='등록된 생일을 제거합니다.')
-async def test(interaction: discord.Interaction):
+async def birthdaydel(interaction: discord.Interaction):
     try:
         conn = mariadb.connect(
             user=secrets.get('sql_usr'),
@@ -320,6 +338,8 @@ async def test(interaction: discord.Interaction):
     finally:
         cur.close()
         conn.close()
+
+
 @tree.command(guild=discord.Object(id=secrets.get('discordsv')), name='생일등록', description='자신을 생일을 등록할 수 있습니다.')
 async def birthdayset(interaction: discord.Interaction, 월: int, 일: int):
     if 월 > 12 or 월 < 1:
@@ -345,11 +365,13 @@ async def birthdayset(interaction: discord.Interaction, 월: int, 일: int):
             cur.execute("""SELECT bmonth, bday FROM discord_birthday WHERE idx=(?);""", (int(interaction.user.id),))
             rsu = cur.fetchone()
             if rsu is None:
-                cur.execute("""insert into discord_birthday (idx, pname, bmonth, bday) values (?, ?, ?, ?);""", (str(interaction.user.id), str(interaction.user), int(월), int(일)))
+                cur.execute("""insert into discord_birthday (idx, pname, bmonth, bday) values (?, ?, ?, ?);""",
+                            (str(interaction.user.id), str(interaction.user), int(월), int(일)))
                 conn.commit()
                 await interaction.response.send_message(f'생일을 등록했습니다.')
             else:
-                await interaction.response.send_message(f'생일이 등록되어있습니다. ({rsu[0]}월 {rsu[1]}일)\n등록된 생일을 제거하려면 /생일삭제 를 이용해주세요')
+                await interaction.response.send_message(
+                    f'생일이 등록되어있습니다. ({rsu[0]}월 {rsu[1]}일)\n등록된 생일을 제거하려면 /생일삭제 를 이용해주세요')
         except mariadb.Error as e:
             print(f'Error connecting to MariaDB Platform: {e}')
         finally:
@@ -391,11 +413,11 @@ async def birthselect(interaction: discord.Interaction, 조회항목: str):
         )
         cur = conn.cursor()
         if 조회항목 == '지난 달':
-            temmou = datetime.datetime.now().month-1
+            temmou = datetime.datetime.now().month - 1
         elif 조회항목 == '이번 달':
             temmou = datetime.datetime.now().month
         elif 조회항목 == '다음 달':
-            temmou = datetime.datetime.now().month+1
+            temmou = datetime.datetime.now().month + 1
         if temmou:
             cur.execute("""SELECT pname FROM discord_birthday WHERE bmonth=(?);""", (temmou,))
             rsu = cur.fetchone()
@@ -405,8 +427,8 @@ async def birthselect(interaction: discord.Interaction, 조회항목: str):
                 embed = discord.Embed(title=f'{조회항목}의 생일자입니다.')
                 noplayer = ''
                 for na in rsu:
-                    noplayer += '```'+str(na)+'```\n'
-                embed.add_field(name=str(len(rsu))+'명', value=f'{noplayer.rstrip("#")}', inline=True)
+                    noplayer += '```' + str(na) + '```\n'
+                embed.add_field(name=str(len(rsu)) + '명', value=f'{noplayer.rstrip("#")}', inline=True)
             embed.set_footer(text='moonlight ONE system')
             await interaction.response.send_message(embed=embed)
         else:
@@ -416,6 +438,8 @@ async def birthselect(interaction: discord.Interaction, 조회항목: str):
     finally:
         cur.close()
         conn.close()
+
+
 @birthselect.autocomplete('조회항목')
 async def birthselect_autocomplete(
         interaction: discord.Interaction,
