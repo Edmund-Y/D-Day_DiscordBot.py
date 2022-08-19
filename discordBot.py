@@ -296,7 +296,7 @@ async def participation(interaction: discord.Interaction, 디코닉네임: disco
                 # plt.rcParams["font.family"] = "MaruBuri"
                 plt.pie(ratio, labels=labels, autopct='%.1f%%', startangle=260, counterclock=False, explode=explode,
                         shadow=True, colors=colors)
-                plt.savefig('./public/참여현황.png')
+                plt.savefig('./public/참여현황.png', transparent=True)
                 f = discord.File('./public/참여현황.png')
                 await interaction.response.send_message(file=f)
             else:
