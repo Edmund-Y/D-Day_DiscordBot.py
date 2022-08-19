@@ -138,8 +138,6 @@ async def serverstop(interaction: discord.Interaction, ):
     embed.set_footer(text='moonlight ONE system')
     await interaction.response.send_message(embed=embed)
     socketgo('stop/', 'all')
-
-
 @serverstop.error
 async def on_serverstop_error(interaction: discord.Interaction, error: app_commands.AppCommandError):
     if isinstance(error, app_commands.CommandOnCooldown):
@@ -213,6 +211,10 @@ async def chkplayer(interaction: discord.Interaction, 콘텐츠명: str):
         cur.close()
         conn.close()
     await client.get_channel(secrets.get('attendance_ch')).send(embed=embed)
+@chkplayer.error
+async def on_chkplayer_error(interaction: discord.Interaction, error: discord.app_commands.errors.MissingPermissions):
+    if isinstance(error, app_commands.errors.MissingPermissions):
+        await interaction.response.send_message(f"명령어 사용권한이 없습니다.", ephemeral=True)
 
 
 # @tree.command(guild=discord.Object(id=secrets.get('discordsv')), name='플레이시간', description='현실경제서버 누적 접속시간을 조회합니다.')
@@ -306,8 +308,6 @@ async def participation(interaction: discord.Interaction, 디코닉네임: disco
     finally:
         cur.close()
         conn.close()
-
-
 @participation.error
 async def on_participation_error(interaction: discord.Interaction, error: app_commands.AppCommandError):
     if isinstance(error, app_commands.CommandOnCooldown):
@@ -438,8 +438,6 @@ async def birthselect(interaction: discord.Interaction, 조회항목: str):
     finally:
         cur.close()
         conn.close()
-
-
 @birthselect.autocomplete('조회항목')
 async def birthselect_autocomplete(
         interaction: discord.Interaction,
@@ -450,6 +448,9 @@ async def birthselect_autocomplete(
         app_commands.Choice(name=birsel, value=birsel)
         for birsel in birthselect if current.lower() in birsel.lower()
     ]
-
+@birthselect.error
+async def on_birthselect_error(interaction: discord.Interaction, error: discord.app_commands.errors.CommandInvokeError):
+    if isinstance(error, app_commands.errors.CommandInvokeError):
+        await interaction.response.send_message(f"잘못된 항목을 입력하였습니다.", ephemeral=True)
 
 client.run(secrets.get('discord_token'))
