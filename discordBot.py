@@ -1,13 +1,21 @@
 # pip install -U git+https://github.com/Rapptz/discord.py
-import os, json, sys, mariadb, discord, socket, datetime, random, time
+import os, json, sys, mariadb, discord, socket, datetime, random, time, shutil
 import matplotlib.pyplot as plt
+import matplotlib as mpl
+from matplotlib import font_manager,rc
 from typing import List
 from discord import app_commands
 from discord.ext import tasks
 
 with open(os.path.join(os.path.dirname(__file__), 'apikey.json')) as f:
     secrets = json.loads(f.read())
+#C:\Users\SpaceN\.matplotlib
 
+fontdir = mpl.matplotlib_fname().replace('matplotlibrc', '\\fonts\\ttf')
+if not os.path.isfile(fontdir+'\MaruBuri-Regular.ttf'):
+    shutil.rmtree(mpl.get_cachedir())
+    shutil.copyfile('./public/MaruBuri-Regular.ttf', fontdir+'\MaruBuri-Regular.ttf')
+    print(mpl.get_cachedir())
 
 class aclient(discord.Client):
     def __init__(self, *, intents: discord.Intents):
@@ -188,7 +196,7 @@ async def chkplayer(interaction: discord.Interaction, 콘텐츠명: str):
             database=secrets.get('sql_usr')
         )
         cur = conn.cursor()
-        query = """insert into discord_attendance (idx, diname, contentname, dstats) values (?, ?, ?, ?);"""
+        query = """insert into discord_attendances (idx, diname, contentname, dstats) values (?, ?, ?, ?);"""
         cur.executemany(query, dbq)
         cur.execute("""insert into discord_contect (contectname) values (?);""", (콘텐츠명,))
         conn.commit()
@@ -238,8 +246,9 @@ async def test(interaction: discord.Interaction, 유저: discord.User):
     await interaction.response.send_message(f'{유저}', ephemeral=True)
 
 
-@tree.command(guild=discord.Object(id=secrets.get('discordsv')), name='참여도', description='자신의')
-async def test(interaction: discord.Interaction, 유저: discord.User):
+@tree.command(guild=discord.Object(id=secrets.get('discordsv')), name='참여도', description='정기컨텐츠 참여도를 확인합니다.')
+@app_commands.checks.cooldown(1, 30, key=lambda i: (i.guild_id))
+async def participation(interaction: discord.Interaction, 디코닉네임: discord.User):
     try:
         conn = mariadb.connect(
             user=secrets.get('sql_usr'),
@@ -249,26 +258,43 @@ async def test(interaction: discord.Interaction, 유저: discord.User):
             database=secrets.get('sql_usr')
         )
         cur = conn.cursor()
-        cur.execute("""SELECT dstats FROM discord_birthday WHERE diname=(?);""", (str(유저),))
+        cur.execute("""SELECT dstats FROM discord_attendances WHERE idx=(?);""", (str(디코닉네임.id),))
         rsu = cur.fetchall()
-        print(rsu)
-        # if rsu is None:
-        #     await interaction.response.send_message(f'없는 유저입니다.')
-        # else:
-        #     ratio = [34, 32, 16]
-        #     labels = ['참여', '불참(작성)', '불참(미작성)']
-        #     explode = [0.05, 0.05, 0.05]
-        #     colors = ['#ff9999', '#ffc000', '#8fd9b6']
-        #     plt.rc('font', family='NanumGothic')
-        #     plt.pie(ratio, labels=labels, autopct='%.1f%%', startangle=260, counterclock=False, explode=explode, shadow=True, colors=colors)
-        #     plt.savefig('./userdata/참여현황.png')
-        #     f = discord.File('./userdata/참여현황.png')
-        #     await interaction.response.send_message(file=f)
+        if rsu is None:
+            await interaction.response.send_message(f'존재하지 않는 디코닉네임입니다.')
+        else:
+            chk = {}
+            ratio = []
+            labels = []
+            explode = [0.05, 0.05, 0.05]
+            colors = ['#ff9999', '#ffc000', '#8fd9b6']
+            for value in rsu:
+                try:
+                    chk[str(value).replace("('", "").replace("',)", "")] += 1
+                except:
+                    chk[str(value).replace("('", "").replace("',)", "")] = 1
+            for key, value in chk.items():
+                labels.append(key)
+                ratio.append(value)
+            if labels:
+                del colors[0-(3-len(labels))]
+                del explode[0-(3-len(labels))]
+                plt.rc('font', family='MaruBuri')
+                plt.pie(ratio, labels=labels, autopct='%.1f%%', startangle=260, counterclock=False, explode=explode, shadow=True, colors=colors)
+                plt.savefig('./public/참여현황.png')
+                f = discord.File('./public/참여현황.png')
+                await interaction.response.send_message(file=f)
+            else:
+                await interaction.response.send_message('콘텐츠 참가이력이 없습니다.')
     except mariadb.Error as e:
         print(f'Error connecting to MariaDB Platform: {e}')
     finally:
         cur.close()
         conn.close()
+@participation.error
+async def on_participation_error(interaction: discord.Interaction, error: app_commands.AppCommandError):
+    if isinstance(error, app_commands.CommandOnCooldown):
+        await interaction.response.send_message(f"{int(error.retry_after)}초 후 명령어를 사용할 수 있습니다.", ephemeral=True)
 
 @tree.command(guild=discord.Object(id=secrets.get('discordsv')), name='생일삭제', description='등록된 생일을 제거합니다.')
 async def test(interaction: discord.Interaction):
