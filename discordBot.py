@@ -29,19 +29,21 @@ class aclient(discord.Client):
         print(f"We have logged in as {self.user}.")
         auto.start()
 
-
 intents = discord.Intents.default()
 intents.members = True
 client = aclient(intents=intents)
 tree = app_commands.CommandTree(client)
 
+@client.event
+async def on_member_remove(self, member):
+    print(member)
 
 @tasks.loop(minutes=1)
 async def auto():
     now = datetime.datetime.now()
     print('현재', now.hour, '시', now.minute, '분 입니다.(', datetime.datetime.today().weekday(), ')')
-    if datetime.datetime.today().weekday() == 0 and now.hour == 9 and now.minute == 0:
-        day5 = now + datetime.datetime.timedelta(days=5)
+    if datetime.datetime.today().weekday() == 0 and now.hour == 9 and now.minute == 9:
+        day5 = now + datetime.timedelta(days=5)
         embed_one = discord.Embed(
             title=day5.strftime('%y년 %m월 %d일(토)'),
             description='오후 9:30시에 콘텐츠 진행합니다.\n참여 가능 하신 분들은 <#893485899961237595>에 이모지(반응) 한번씩 눌러주세요~\n참여 불가능 하신분들은 싫어요 누르신 다음 사유 적어주세요.\n\n(사유 없이 미참석시 패널티 부여됩니다!)',
@@ -75,7 +77,6 @@ async def auto():
             )
             cur = conn.cursor()
             cur.execute("""SELECT * FROM discord_birthday;""")
-            rsu = cur.fetchall()
             rsu = cur.fetchall()
             birthplayer = ''
             if rsu:
