@@ -95,8 +95,6 @@ async def auto():
         finally:
             cur.close()
             conn.close()
-
-
 @auto.before_loop
 async def before_auto():
     await client.wait_until_ready()
@@ -340,6 +338,8 @@ async def birthselect(interaction: discord.Interaction, 조회항목: str):
             temmou = datetime.datetime.now().month
         elif 조회항목 == '다음 달':
             temmou = datetime.datetime.now().month + 1
+        elif int(조회항목) == range(1, 12):
+            temmou = 조회항목
         if temmou:
             cur.execute("""SELECT pname FROM discord_birthday WHERE bmonth=(?);""", (temmou,))
             rsu = cur.fetchone()
@@ -365,7 +365,7 @@ async def birthselect_autocomplete(
         interaction: discord.Interaction,
         current: str,
 ) -> List[app_commands.Choice[str]]:
-    birthselect = ['지난 달', '이번 달', '다음 달']
+    birthselect = ['지난 달', '이번 달', '다음 달', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
     return [
         app_commands.Choice(name=birsel, value=birsel)
         for birsel in birthselect if current.lower() in birsel.lower()
