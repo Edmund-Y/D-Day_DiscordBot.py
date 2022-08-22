@@ -117,8 +117,6 @@ async def serverstart(interaction: discord.Interaction, 서버이름: str):
     embed.set_footer(text='moonlight ONE system')
     await interaction.response.send_message(embed=embed)
     socketgo('start/', str(서버이름))
-
-
 @serverstart.autocomplete('서버이름')
 async def serverstart_autocomplete(
         interaction: discord.Interaction,
@@ -129,8 +127,6 @@ async def serverstart_autocomplete(
         app_commands.Choice(name=selserver, value=selserver)
         for selserver in serverstart if current.lower() in selserver.lower()
     ]
-
-
 @tree.command(guild=discord.Object(id=secrets.get('discordsv')), name='콘텐츠서버종료', description='실행중인 콘텐츠 서버를 종료합니다.')
 @app_commands.checks.cooldown(1, 30, key=lambda i: (i.guild_id))
 async def serverstop(interaction: discord.Interaction, ):
@@ -139,8 +135,6 @@ async def serverstop(interaction: discord.Interaction, ):
     embed.set_footer(text='moonlight ONE system')
     await interaction.response.send_message(embed=embed)
     socketgo('stop/', 'all')
-
-
 @serverstop.error
 async def on_serverstop_error(interaction: discord.Interaction, error: app_commands.AppCommandError):
     if isinstance(error, app_commands.CommandOnCooldown):
@@ -219,46 +213,8 @@ async def on_chkplayer_error(interaction: discord.Interaction, error: discord.ap
     if isinstance(error, app_commands.errors.MissingPermissions):
         await interaction.response.send_message(f"명령어 사용권한이 없습니다.", ephemeral=True)
 
-# @tree.command(guild=discord.Object(id=secrets.get('discordsv')), name='플레이시간', description='현실경제서버 누적 접속시간을 조회합니다.')
-# async def playtime(interaction: discord.Interaction, 닉네임: str):
-#     try:
-#         conn = mariadb.connect(
-#             user=secrets.get('sql_usr'),
-#             password=secrets.get('sql_pw'),
-#             host=secrets.get('sql_addr'),
-#             port=secrets.get('sql_port'),
-#             database=secrets.get('sql_usr')
-#         )
-#         cur = conn.cursor()
-#         cur.execute(f"SELECT time FROM realEconomy_playtime WHERE name = '{닉네임}'")
-#         rsu = cur.fetchone()
-#         if rsu is None:
-#             await interaction.response.send_message(f'{닉네임}은 없는 닉네임입니다.')
-#         else:
-#             await interaction.response.send_message(f'{닉네임}은 {datetime.timedelta(milliseconds=int(rsu[0]))} 만큼 플레이하였습니다.')
-#         conn.close()
-#     except mariadb.Error as e:
-#         print(f'Error connecting to MariaDB Platform: {e}')
-
-
-# @tree.command(guild=discord.Object(id=secrets.get('discordsv')), name='현경실시간지도', description='현경서버의 실시간 지도를 표출합니다.')
-# @app_commands.checks.cooldown(1, 30, key=lambda i: (i.guild_id))
-# async def realEconomyLivemap(interaction: discord.Interaction,):
-#     await interaction.response.send_message(f"http://map.d-day.moonlight.one/", ephemeral=True)
-# @realEconomyLivemap.error
-# async def on_realEconomyLivemap_error(interaction: discord.Interaction, error: app_commands.AppCommandError):
-#     if isinstance(error, app_commands.CommandOnCooldown):
-#         await interaction.response.send_message(f"{int(error.retry_after)}초 후 명령어를 사용할 수 있습니다.", ephemeral=True)
-
-
-@tree.command(guild=discord.Object(id=secrets.get('discordsv')), name='test', description='테스트용 명령어입니다.')
-@app_commands.checks.has_permissions(manage_messages=True)
-async def test(interaction: discord.Interaction, 유저: discord.User):
-    await interaction.response.send_message(f'{유저}', ephemeral=True)
-
-
 @tree.command(guild=discord.Object(id=secrets.get('discordsv')), name='참여도', description='정기컨텐츠 참여도를 확인합니다.')
-@app_commands.checks.cooldown(1, 30, key=lambda i: (i.guild_id))
+@app_commands.checks.cooldown(1, 5, key=lambda i: (i.guild_id))
 async def participation(interaction: discord.Interaction, 디코닉네임: discord.User):
     try:
         conn = mariadb.connect(
@@ -303,6 +259,7 @@ async def participation(interaction: discord.Interaction, 디코닉네임: disco
                 plt.savefig('./public/참여현황.png', transparent=True)
                 f = discord.File('./public/참여현황.png')
                 await interaction.response.send_message(file=f)
+                os.remove('./public/참여현황.png')
             else:
                 await interaction.response.send_message('콘텐츠 참가이력이 없습니다.')
     except mariadb.Error as e:
