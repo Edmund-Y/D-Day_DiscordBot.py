@@ -102,45 +102,6 @@ async def before_auto():
     await client.wait_until_ready()
 
 
-# 서버구동 및 종료
-def socketgo(stats, svname):
-    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    client_socket.connect(('3.37.210.15', 56895))
-    client_socket.send(stats.encode() + svname.encode())
-    client_socket.close()
-
-
-@tree.command(guild=discord.Object(id=secrets.get('discordsv')), name='서버구동', description='마인크래프트 서버를 구동합니다.')
-async def serverstart(interaction: discord.Interaction, 서버이름: str):
-    embed = discord.Embed(title=f'{서버이름}를 실행합니다.')
-    embed.set_author(name=str(interaction.user.name) + '님에 의해')
-    embed.set_footer(text='moonlight ONE system')
-    await interaction.response.send_message(embed=embed)
-    socketgo('start/', str(서버이름))
-@serverstart.autocomplete('서버이름')
-async def serverstart_autocomplete(
-        interaction: discord.Interaction,
-        current: str,
-) -> List[app_commands.Choice[str]]:
-    serverstart = ['현실경제', '채석장']
-    return [
-        app_commands.Choice(name=selserver, value=selserver)
-        for selserver in serverstart if current.lower() in selserver.lower()
-    ]
-@tree.command(guild=discord.Object(id=secrets.get('discordsv')), name='콘텐츠서버종료', description='실행중인 콘텐츠 서버를 종료합니다.')
-@app_commands.checks.cooldown(1, 30, key=lambda i: (i.guild_id))
-async def serverstop(interaction: discord.Interaction, ):
-    embed = discord.Embed(title='모든 콘텐츠 서버가 종료되었습니다.')
-    embed.set_author(name=str(interaction.user.name) + '님에 의해')
-    embed.set_footer(text='moonlight ONE system')
-    await interaction.response.send_message(embed=embed)
-    socketgo('stop/', 'all')
-@serverstop.error
-async def on_serverstop_error(interaction: discord.Interaction, error: app_commands.AppCommandError):
-    if isinstance(error, app_commands.CommandOnCooldown):
-        await interaction.response.send_message(f"{int(error.retry_after)}초 후 명령어를 사용할 수 있습니다.", ephemeral=True)
-
-
 @tree.command(guild=discord.Object(id=secrets.get('discordsv')), name='출석체크', description='정기컨텐츠 참여 확인합니다.')
 @app_commands.checks.has_permissions(manage_messages=True)
 async def chkplayer(interaction: discord.Interaction, 콘텐츠명: str):
