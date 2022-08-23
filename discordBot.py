@@ -226,8 +226,6 @@ async def participation(interaction: discord.Interaction, 디코닉네임: disco
     finally:
         cur.close()
         conn.close()
-
-
 @participation.error
 async def on_participation_error(interaction: discord.Interaction, error: app_commands.AppCommandError):
     if isinstance(error, app_commands.CommandOnCooldown):
@@ -374,5 +372,28 @@ async def birthselect_autocomplete(
 async def on_birthselect_error(interaction: discord.Interaction, error: discord.app_commands.errors.CommandInvokeError):
     if isinstance(error, app_commands.errors.CommandInvokeError):
         await interaction.response.send_message(f"잘못된 항목을 입력하였습니다.", ephemeral=True)
+
+@tree.command(guild=discord.Object(id=secrets.get('discordsv')), name='운영현황', description='디데이 운영현황도입니다.')
+@app_commands.checks.cooldown(1, 10, key=lambda i: (i.guild_id))
+async def statistics(interaction: discord.Interaction, 조회항목: str):
+    await interaction.response.send_message('잘못된 선택입니다.', ephemeral=True)
+@statistics.autocomplete('조회항목')
+async def statistics_autocomplete(
+        interaction: discord.Interaction,
+        current: str,
+) -> List[app_commands.Choice[str]]:
+    birthselect = ['플레이현황', '컨텐츠진행도']
+    return [
+        app_commands.Choice(name=birsel, value=birsel)
+        for birsel in birthselect if current.lower() in birsel.lower()
+    ]
+@statistics.error
+async def on_statistics_error(interaction: discord.Interaction, error: app_commands):
+    if isinstance(error, app_commands.errors.CommandInvokeError):
+        await interaction.response.send_message(f"잘못된 항목을 입력하였습니다.", ephemeral=True)
+    elif isinstance(error, app_commands.CommandOnCooldown):
+        await interaction.response.send_message(f"{int(error.retry_after)}초 후 명령어를 사용할 수 있습니다.", ephemeral=True)
+    elif isinstance(error, app_commands.errors.CommandNotFound):
+        print(f'다른 채널에서 명령어 사용됨')
 
 client.run(secrets.get('discord_token'))
