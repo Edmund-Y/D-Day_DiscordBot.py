@@ -33,6 +33,7 @@ try:
             xdaythr.append(b[0])
             yvaluethr.append(b[2])
         yname.append(b[1])
+    print(dict.fromkeys(yname))
     print(f'{xdayone} / {yvalueone}')
     print(f'{xdaytwo} / {yvaluetwo}')
     print(f'{xdaythr} / {yvaluethr}')
